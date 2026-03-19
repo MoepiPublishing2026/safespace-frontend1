@@ -157,10 +157,10 @@ export default function EditReportScreen() {
         const check = validateAgeGrade(ageNum, report.grade);
 
         if (check.status === "error") {
-          newErrors.age = check.message; // block submission
+          newErrors.grade  = check.message; // block submission
         } else if (check.status === "warning") {
           // show warning but allow submission
-          newErrors.age = check.message;
+          newErrors.age  = check.message;
         }
       }
     }
