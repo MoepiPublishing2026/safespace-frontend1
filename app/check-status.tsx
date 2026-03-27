@@ -17,7 +17,6 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-
 const { width } = Dimensions.get("window");
 
 export default function DetailsScreen() {
@@ -44,7 +43,7 @@ export default function DetailsScreen() {
       try {
         await soundRef.current.stopAsync();
         await soundRef.current.unloadAsync();
-      } catch {}
+      } catch { }
       soundRef.current = null;
       setIsPlaying(false);
       setDuration(0);
@@ -193,8 +192,22 @@ export default function DetailsScreen() {
       setLoading(false);
     }
   };
+  const renderField = (label: string, value: any) => {
+    if (
+      value === null ||
+      value === undefined ||
+      (typeof value === "string" && value.trim() === "")
+    ) {
+      return null;
+    }
 
-
+    return (
+      <Text style={styles.detail}>
+        <Text style={styles.detailLabel}>{label}: </Text>
+        {value}
+      </Text>
+    );
+  };
   return (
     <View style={styles.container}>
       <TopBar
@@ -265,18 +278,21 @@ export default function DetailsScreen() {
 
               <Text style={styles.detail}>
                 <Text style={styles.detailLabel}>Abuse Type: </Text>
-                {searchResult.abuse_type || "Unknown"}
+                {searchResult.abuse_type || ""}
               </Text>
 
               <Text style={styles.detail}>
                 <Text style={styles.detailLabel}>Subtype: </Text>
-                {searchResult.subtype || "Unknown"}
+                {searchResult.subtype || ""}
               </Text>
 
-              <Text style={styles.detail}>
-                <Text style={styles.detailLabel}>Description: </Text>
-                {String(searchResult.description || "")}
-              </Text>
+              {searchResult.description &&
+                searchResult.description.trim() !== "" && (
+                  <Text style={styles.detail}>
+                    <Text style={styles.detailLabel}>Description: </Text>
+                    {searchResult.description}
+                  </Text>
+                )}
 
               <Text style={styles.detail}>
                 <Text style={styles.detailLabel}>Email: </Text>
@@ -324,73 +340,92 @@ export default function DetailsScreen() {
 
               {/* MEDIA SECTION */}
               {searchResult.image_path && (() => {
-                const fileUrl = `${BACKEND_URL}${searchResult.image_path}`;
-                const lowerPath = searchResult.image_path.toLowerCase();
+                let files: string[] = [];
 
-                const isVideo =
-                  lowerPath.endsWith(".mp4") ||
-                  lowerPath.endsWith(".mov") ||
-                  lowerPath.endsWith(".m4v");
+                try {
+                  files = JSON.parse(searchResult.image_path);
+                } catch {
+                  files = [searchResult.image_path];
+                }
 
-                const isAudio =
-                  lowerPath.endsWith(".mp3") ||
-                  lowerPath.endsWith(".wav") ||
-                  lowerPath.endsWith(".aac") ||
-                  lowerPath.endsWith(".m4a");
+                return files.map((path: string, index: number) => {
+                  const fileUrl = path.startsWith("http")
+                    ? path
+                    : `${BACKEND_URL}${path.startsWith("/") ? path : `/${path}`}`;
 
-                if (isVideo) {
+                  const lowerPath = path.toLowerCase();
+
+                  const isVideo =
+                    lowerPath.endsWith(".mp4") ||
+                    lowerPath.endsWith(".mov") ||
+                    lowerPath.endsWith(".m4v");
+
+                  const isAudio =
+                    lowerPath.endsWith(".mp3") ||
+                    lowerPath.endsWith(".wav") ||
+                    lowerPath.endsWith(".aac") ||
+                    lowerPath.endsWith(".m4a");
+
+                  if (isVideo) {
+                    return (
+                      <Video
+                        key={index}
+                        source={{ uri: fileUrl }}
+                        style={styles.reporterVideo}
+                        useNativeControls
+                        resizeMode={ResizeMode.CONTAIN}
+                      />
+                    );
+                  }
+
+                  if (isAudio) {
+                    return (
+                      <View key={index} style={{ marginTop: 10 }}>
+                        <Text style={{ marginBottom: 5 }}>Audio Attachment:</Text>
+
+                        <TouchableOpacity
+                          style={styles.playButton}
+                          onPress={() => togglePlay(fileUrl)}
+                        >
+                          <Text style={styles.playButtonText}>
+                            {isPlaying ? "⏸" : "▶"}
+                          </Text>
+                        </TouchableOpacity>
+
+                        <View style={styles.progressBar}>
+                          <View
+                            style={[
+                              styles.progressFill,
+                              {
+                                width: duration
+                                  ? `${(position / duration) * 100}%`
+                                  : "0%",
+                              },
+                            ]}
+                          />
+                        </View>
+
+                        <Text style={styles.timeText}>
+                          {formatTime(position)} / {formatTime(duration)}
+                        </Text>
+                      </View>
+                    );
+                  }
+
                   return (
-                    <Video
+                    <Image
+                      key={index}
                       source={{ uri: fileUrl }}
-                      style={styles.reporterVideo}
-                      useNativeControls
-                      resizeMode={ResizeMode.CONTAIN}
+                      style={styles.reporterImage}
+                      resizeMode="cover"
+                      onError={(e: { nativeEvent: { error: any; }; }) =>
+                        console.log("Image load error:", e.nativeEvent?.error)
+                      }
                     />
                   );
-                }
-
-                if (isAudio) {
-                  return (
-                    <View style={{ marginTop: 10 }}>
-                      <Text style={{ marginBottom: 5 }}>Audio Attachment:</Text>
-
-                      <TouchableOpacity
-                        style={styles.playButton}
-                        onPress={() => togglePlay(fileUrl)}
-                      >
-                        <Text style={styles.playButtonText}>
-                          {isPlaying ? "⏸" : "▶"}
-                        </Text>
-                      </TouchableOpacity>
-
-                      <View style={styles.progressBar}>
-                        <View
-                          style={[
-                            styles.progressFill,
-                            {
-                              width: duration
-                                ? `${(position / duration) * 100}%`
-                                : "0%",
-                            },
-                          ]}
-                        />
-                      </View>
-
-                      <Text style={styles.timeText}>
-                        {formatTime(position)} / {formatTime(duration)}
-                      </Text>
-                    </View>
-                  );
-                }
-
-                return (
-                  <Image
-                    source={{ uri: fileUrl }}
-                    style={styles.reporterImage}
-                    resizeMode="cover"
-                  />
-                );
+                });
               })()}
+
 
               <TouchableOpacity
                 style={styles.editButton}
@@ -433,7 +468,7 @@ const styles = StyleSheet.create({
   formContainer: { width: "100%", borderWidth: 2, borderColor: "#c7da30", borderRadius: 10, padding: 20, backgroundColor: "#fff" },
   input: { width: "100%", height: 50, borderWidth: 2, borderColor: "#c7da30", borderRadius: 8, paddingHorizontal: 15, fontSize: 16, marginBottom: 10, fontFamily: "Montserrat" },
   statusButton: { backgroundColor: "#fff", width: "100%", padding: 10, borderRadius: 48, justifyContent: "center", alignItems: "center", marginBottom: 10, borderColor: "#c7da30", borderWidth: 2 },
-  statusButtonText: { color: "#1aaed3ff", fontWeight: "500", fontSize: 16, fontFamily: "Montserrat" },
+  statusButtonText: { color: "#1aaed3ff", fontWeight: "bold", fontSize: 16},
   caseStatusLabel: { fontSize: 16, fontWeight: "bold", marginVertical: 10, textAlign: "center", fontFamily: "Montserrat" },
   statusContainer: { width: "100%", maxHeight: 300, marginTop: 10, flexGrow: 0 },
   caseItem: { backgroundColor: "#f9f9f9", padding: 15, borderRadius: 8, borderWidth: 1, borderColor: "#eee", marginBottom: 10 },
@@ -441,7 +476,7 @@ const styles = StyleSheet.create({
   detail: { fontSize: 14, color: "#333", marginBottom: 3, fontFamily: "Montserrat" },
   detailLabel: { fontWeight: "bold", fontFamily: "Montserrat" },
   editButton: { marginTop: 15, borderWidth: 2, borderColor: "#c7da30", padding: 12, borderRadius: 50, alignItems: "center" },
-  editButtonText: { color: "#1aaed3ff", fontWeight: "500", fontSize: 16, fontFamily: "Montserrat" },
+  editButtonText: { color: "#1aaed3ff", fontWeight: "bold", fontSize: 16 },
   reporterImage: { width: 300, height: 200, marginBottom: 10 },
   reporterVideo: { width: 300, height: 200, marginBottom: 10 },
   overlay: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.3)", zIndex: 5 },

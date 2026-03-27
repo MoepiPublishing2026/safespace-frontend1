@@ -88,7 +88,7 @@ export default function CreateReportScreen() {
   const [school, setSchool] = useState("");
   const [schoolSuggestions, setSchoolSuggestions] = useState<any[]>([]);
   const [image, setImage] = useState<any>(null);
-  const [attachment, setAttachment] = useState<any>(null);
+
   const [loading, setLoading] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -96,6 +96,8 @@ export default function CreateReportScreen() {
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [submittedCaseNumber, setSubmittedCaseNumber] = useState("");
    const [activeMenuItem, setActiveMenuItem] = useState<string | null>(null);
+   const [attachments, setAttachments] = useState<any[]>([]);
+   const [currentAudio, setCurrentAudio] = useState<string | null>(null);
 
   // 🎵 AUDIO STATE
   const [sound, setSound] = useState<Audio.Sound | null>(null);
@@ -139,44 +141,46 @@ export default function CreateReportScreen() {
   useEffect(() => {
     return () => {
       if (sound) {
-        sound.unloadAsync();
+        sound.stopAsync().then(() => sound.unloadAsync()).catch(() => {});
       }
     };
-  }, [sound]);
+  }, []);
 
   // 🎵 STOP AUDIO WHEN NEW CASE IS SEARCHED OR ATTACHMENT CHANGED
   const stopAudio = async () => {
-    if (sound) {
-      await sound.unloadAsync();
+    try {
+      if (sound) {
+        await sound.stopAsync();
+        await sound.unloadAsync();
+      }
+    } catch (e) {
+      console.log("stopAudio error:", e);
+    } finally {
       setSound(null);
       setIsPlaying(false);
+      setCurrentAudio(null);
     }
   };
 
-  // pick image or video
   const pickMedia = async () => {
     await stopAudio();
+  
     const result = await DocumentPicker.getDocumentAsync({
       type: ["image/*", "video/*", "audio/*"],
       copyToCacheDirectory: true,
+      multiple: true
     });
-
+  
     if (result.canceled) return;
-
-    const file = result.assets[0];
-
-    setAttachment({
+  
+    const newFiles = result.assets.map(file => ({
       uri: file.uri,
       name: file.name,
-      type: file.mimeType?.startsWith("image")
-        ? "image"
-        : file.mimeType?.startsWith("video")
-          ? "video"
-          : "audio",
-      mimeType: file.mimeType,
-    });
+      type: file.mimeType || "application/octet-stream",
+    }));
+  
+    setAttachments(prev => [...prev, ...newFiles]);
   };
-
   const searchSchools = async (text: string) => {
     setSchool(text);
     if (text.length < 1) {
@@ -288,23 +292,13 @@ export default function CreateReportScreen() {
         formData.append("full_name", fullName);
       }
 
-      // Attach file if selected
-      if (attachment) {
-        const uriParts = attachment.uri.split("/");
-        const fileName = uriParts[uriParts.length - 1];
-        const fileType =
-          attachment.type &&
-          attachment.type.startsWith &&
-          attachment.type.startsWith("video")
-            ? "video/mp4"
-            : "image/jpeg";
-
-        formData.append("file", {
-          uri: attachment.uri,
-          name: fileName,
-          type: fileType,
+      attachments.forEach((file, index) => {
+        formData.append("files", {
+          uri: file.uri,
+          name: file.name || `file-${index}`,
+          type: file.type || "application/octet-stream",
         } as any);
-      }
+      });
 
       const response = await fetch(`${BACKEND_URL}/reports`, {
         method: "POST",
@@ -337,7 +331,7 @@ export default function CreateReportScreen() {
       setLocation("");
       setSchool("");
       setGrade("");
-      setAttachment(null);
+      setAttachments([]);
       setSchoolSuggestions([]);
       setErrors({});
 
@@ -352,34 +346,35 @@ export default function CreateReportScreen() {
   };
 
    // 🎵 Play/Pause Audio
-  const toggleAudioPreview = async () => {
+   const toggleAudioPreview = async (file: any) => {
     try {
-      if (!attachment?.uri) return;
-
-      if (!sound) {
-        const { sound: newSound } = await Audio.Sound.createAsync(
-          { uri: attachment.uri },
-          { shouldPlay: true }
-        );
-
-        setSound(newSound);
-        setIsPlaying(true);
-
-        newSound.setOnPlaybackStatusUpdate((status: any) => {
-          if (status.didJustFinish) {
-            setIsPlaying(false);
-          }
-        });
-      } else {
-        const status = await sound.getStatusAsync();
-        if (status.isPlaying) {
-          await sound.pauseAsync();
-          setIsPlaying(false);
-        } else {
-          await sound.playAsync();
-          setIsPlaying(true);
-        }
+      if (!file?.uri) return;
+  
+      // If same audio is playing → pause it
+      if (currentAudio === file.uri && isPlaying && sound) {
+        await sound.pauseAsync();
+        setIsPlaying(false);
+        return;
       }
+  
+      // Stop previous audio completely
+      await stopAudio();
+  
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: file.uri },
+        { shouldPlay: true }
+      );
+  
+      setSound(newSound);
+      setCurrentAudio(file.uri);
+      setIsPlaying(true);
+  
+      newSound.setOnPlaybackStatusUpdate((status: any) => {
+        if (status.didJustFinish) {
+          setIsPlaying(false);
+          setCurrentAudio(null);
+        }
+      });
     } catch (error) {
       console.log("Audio preview error:", error);
     }
@@ -428,13 +423,13 @@ export default function CreateReportScreen() {
 
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.title}>REPORT CASE</Text>
+        <Text style={styles.title}>REPORT A CASE</Text>
         {isAnonymous && (
           <Text style={{ color: "black", marginBottom: 10 ,fontSize: width * 0.04}}>
             You are reporting anonymously
           </Text>
         )}
-        <Text style={styles.abuseTypeText}>Abuse Type: {abuseTypeName}</Text>
+        <Text style={styles.abuseTypeText}>Report Type: {abuseTypeName}</Text>
 
         <View style={styles.formWrapper}>
           {/* Subtype */}
@@ -682,47 +677,73 @@ export default function CreateReportScreen() {
                 <Text style={styles.chooseFileText}>Choose File</Text>
               </TouchableOpacity>
               <Text style={styles.fileNameText}>
-                {attachment ? attachment.uri.split("/").pop() : "No file chosen"}
+              {attachments.length > 0
+  ? `${attachments.length} file(s) selected`
+  : "No file chosen"}
 
 
               </Text>
             </View>
 
-            {attachment && attachment.type && attachment.type.startsWith("image") && (
-              <Image
-                source={{ uri: attachment.uri }}
-                style={styles.imagePreview}
-              />
-            )}
-            {attachment && attachment.type && attachment.type.startsWith("video") && (
-              <Video
-                source={{ uri: attachment.uri }}
-                style={styles.videoPreview}
-                useNativeControls
-                resizeMode={"contain" as any}
-              />
-            )}
+           
+            {attachments.map((file, index) => (
+  <View key={index} style={{ marginBottom: 12 }}>
 
-            {/* 🎵 UPDATED AUDIO SECTION */}
-            {attachment?.type === "audio" && (
-              <View style={{ marginTop: 10 }}>
-                <TouchableOpacity
-                  onPress={toggleAudioPreview}
-                  style={{
-                    borderWidth: 2,
-                    borderColor: "#c7da30",
-                    borderRadius: 8,
-                    paddingVertical: 12,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Text style={{ color: "#1aaed3ff", fontWeight: "600" }}>
-                    {isPlaying ? "⏸ Pause Audio" : "▶ Play Audio"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
+    {/* IMAGE */}
+    {file.type?.startsWith("image") && (
+      <Image
+        source={{ uri: file.uri }}
+        style={styles.imagePreview}
+      />
+    )}
+
+    {/* VIDEO */}
+    {file.type?.startsWith("video") && (
+      <Video
+        source={{ uri: file.uri }}
+        style={styles.videoPreview}
+        useNativeControls
+        resizeMode={"contain" as any}
+      />
+    )}
+
+    {/* AUDIO */}
+    {file.type?.startsWith("audio") && (
+  <TouchableOpacity
+    onPress={async () => {
+      toggleAudioPreview(file);
+    }}
+    style={{
+      borderWidth: 2,
+      borderColor: "#c7da30",
+      borderRadius: 8,
+      padding: 10,
+      alignItems: "center",
+    }}
+  >
+    <Text>
+      {currentAudio === file.uri && isPlaying
+        ? "⏸ Pause Audio"
+        : "▶ Play Audio"}
+    </Text>
+  </TouchableOpacity>
+)}
+
+    {/* REMOVE BUTTON */}
+    <TouchableOpacity
+      onPress={() =>
+        setAttachments(prev => prev.filter((_, i) => i !== index))
+      }
+    >
+      <Text style={{ color: "red", textAlign: "center", marginTop: 5 }}>
+        Remove
+      </Text>
+    </TouchableOpacity>
+
+  </View>
+))}
+
+           
 
           </View>
 
@@ -915,6 +936,7 @@ const styles = StyleSheet.create({
   submitText: {
     color: "#1aaed3ff",
     fontSize: width * 0.045,
+    fontWeight: "bold",
   },
 
   suggestionsOverlay: {

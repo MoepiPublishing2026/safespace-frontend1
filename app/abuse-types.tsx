@@ -23,8 +23,13 @@ export default function AbuseTypesScreen() {
     const slideAnim = useState(new Animated.Value(width))[0];
 
     const router = useRouter();
+   
+
     const params = useLocalSearchParams();
     const anonymous = params.anonymous;
+    const editMode = params.editMode;
+    const caseNumber = params.caseNumber;
+
 
     useEffect(() => {
         axios
@@ -60,7 +65,17 @@ export default function AbuseTypesScreen() {
         }, 250);
     };
 
-    const handleAbuseTypeSelect = (type: any) => {
+  const handleAbuseTypeSelect = (type: any) => {
+    if (editMode === "true") {
+        router.push({
+            pathname: "/edit-report",
+            params: {
+                case_number: caseNumber,
+                newAbuseTypeId: type.id,
+                newAbuseTypeName: type.type_name,
+            },
+        });
+    } else {
         router.push({
             pathname: "/report-form",
             params: {
@@ -69,7 +84,8 @@ export default function AbuseTypesScreen() {
                 anonymous,
             },
         });
-    };
+    }
+};
 
     return (
         <View style={styles.container}>

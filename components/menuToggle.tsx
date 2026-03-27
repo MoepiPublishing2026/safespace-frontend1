@@ -91,7 +91,9 @@ const styles = StyleSheet.create({
     textAlign: "left",
     fontSize: width * 0.04,
     color: "#1aaed3ff",
-    fontFamily: 'Montserrat'
+    fontWeight: "600",
+    
   },
 });
 
+  
