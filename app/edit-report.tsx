@@ -217,7 +217,13 @@ export default function EditReportScreen() {
     else if (!report.age) newErrors.age = "Age is required.";
     else {
       const check = validateAgeGrade(parseInt(String(report.age), 10), report.grade);
-      if (check.status !== "ok") newErrors.age = check.message;
+      if (check.status === "error") {
+        // Invalid grade → show under grade field
+        newErrors.grade = check.message;
+      } else if (check.status === "warning") {
+        // Age unusual → show under age field
+        newErrors.age = check.message;
+      }
     }
     if (!isAnonymous && !report.full_name?.trim()) {
       newErrors.full_name = "Full name is required.";
