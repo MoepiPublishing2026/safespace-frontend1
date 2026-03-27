@@ -92,6 +92,7 @@ export default function EditReportScreen() {
       .then((res) => {
         setReport(res.data);
         setSelectedAbuseType(String(res.data.abuse_type_id));
+        setSelectedSubtype(String(res.data.subtype_id));
         
         if (res.data.image_path) {
           try {
@@ -116,49 +117,39 @@ export default function EditReportScreen() {
       .catch(() => console.error("Failed to fetch report."));
   }, [case_number]);
 
-  // Abuse types
+  
   useEffect(() => {
-    axios
-      .get(`${BACKEND_URL}/reports/abuse-types`)
-      .then((res) => {
-        const formatted = res.data.map((a: any) => ({
-          label: a.abuse_type_name,
-          value: String(a.id),
+    axios.get(`${BACKEND_URL}/reports/abuse-types`)
+      .then(res => {
+        const formatted = res.data.map((item: any) => ({
+          label: item.type_name,
+          value: String(item.id),
         }));
         setAbuseTypeItems(formatted);
       })
-      .catch(() => console.error("Failed to load abuse types."));
+      .catch(err => console.log("Failed to load abuse types", err));
   }, []);
 
-  // Fetch subtypes
   useEffect(() => {
-    if (!selectedAbuseType || !report) return;
+    if (!selectedAbuseType) return;
   
     axios
       .get(`${BACKEND_URL}/reports/subtypes/${selectedAbuseType}`)
       .then((res) => {
-        const formatted = res.data.map((s: any) => ({
-          label: s.sub_type_name,
-          value: String(s.id),
+        const formatted = res.data.map((item: any) => ({
+          label: item.sub_type_name,
+          value: String(item.id),
         }));
   
         setSubtypeItems(formatted);
   
-        // ✅ Set subtype AFTER items are ready
-        const initialSubtype = String(report.subtype_id);
-  
-        const exists = formatted.find(
-          (item: any) => item.value === initialSubtype
-        );
-  
-        if (exists) {
-          setSelectedSubtype(initialSubtype);
-        } else {
-          setSelectedSubtype("");
+        // ✅ IMPORTANT: re-set subtype AFTER items load
+        if (report?.subtype_id) {
+          setSelectedSubtype(String(report.subtype_id));
         }
       })
-      .catch(() => console.error("Failed to load subtypes."));
-  }, [selectedAbuseType, report]);
+      .catch(() => console.log("Failed to fetch subtypes"));
+  }, [selectedAbuseType]);
 
   useEffect(() => {
     return () => {
@@ -239,6 +230,14 @@ export default function EditReportScreen() {
     }
   };
 
+  useEffect(() => {
+    // Only reset if user manually changes it AFTER load
+    if (report) {
+      setSelectedSubtype("");
+    }
+  }, [selectedAbuseType]);
+
+  //
   const handleUpdate = async () => {
     if (!report) return;
     const newErrors: any = {};
@@ -364,49 +363,50 @@ export default function EditReportScreen() {
         </View>
 
         <View style={styles.formWrapper}>
-        <View style={[styles.inputGroup, { zIndex: 6000 }]}>
+
+        {/* Abuse Type */}
+
+          {/* Subtype */}
+          {/* Abuse Type */}
+          <View style={styles.inputGroup}>
   <Text style={styles.label}>Abuse Type</Text>
+
   <DropDownPicker
     open={abuseTypeOpen}
     value={selectedAbuseType}
     items={abuseTypeItems}
     setOpen={setAbuseTypeOpen}
-    setValue={(callback) => {
-      const value = callback(selectedAbuseType);
-      setSelectedAbuseType(value);
-
-      // 🔥 update report immediately
-      updateReportField("abuse_type_id", value);
-
-      // 🔥 reset subtype when abuse type changes
-      setSelectedSubtype("");
-      setSubtypeItems([]);
-    }}
+    setValue={setSelectedAbuseType}
     setItems={setAbuseTypeItems}
-    placeholder="Select Abuse Type"
+    placeholder="Select abuse type"
     style={styles.pickerWrapper}
     dropDownContainerStyle={styles.pickerDropdown}
+    zIndex={3000}
   />
 </View>
-          {/* Subtype */}
-          <View style={[styles.inputGroup, { zIndex: 5000 }]}>
-            <Text style={styles.label}>Subtype</Text>
-            <DropDownPicker
-              open={subtypeOpen}
-              value={selectedSubtype}
-              items={subtypeItems}
-              setOpen={setSubtypeOpen}
-              setValue={setSelectedSubtype}
-              setItems={setSubtypeItems}
-              placeholder="Select Subtype"
-              style={styles.pickerWrapper}
-              dropDownContainerStyle={styles.pickerDropdown}
-              placeholderStyle={{ color: "#555" }}
-              textStyle={{ fontSize: 15, color: "#000" }}
-              disabled={!selectedAbuseType}
-            />
-            {errors.subtype && <Text style={styles.errorText}>{errors.subtype}</Text>}
-          </View>
+
+{/* Subtype */}
+<View style={styles.inputGroup}>
+  <Text style={styles.label}>Subtype</Text>
+
+  <DropDownPicker
+    open={subtypeOpen}
+    value={selectedSubtype}
+    items={subtypeItems}
+    setOpen={setSubtypeOpen}
+    setValue={setSelectedSubtype}
+    setItems={setSubtypeItems}
+    placeholder="Select subtype"
+    style={styles.pickerWrapper}
+    dropDownContainerStyle={styles.pickerDropdown}
+    zIndex={2000}
+  />
+
+  {errors.subtype && (
+    <Text style={styles.errorText}>{errors.subtype}</Text>
+  )}
+</View>
+          
 
           {/* Full Name */}
           {!isAnonymous && (
@@ -662,6 +662,18 @@ const styles = StyleSheet.create({
   modalCase: { fontSize: 16, color: "#000", marginBottom: 25, textAlign: "center", fontFamily: "Montserrat" },
   modalButton: { backgroundColor: "#fff", width: "100%", padding: 10, borderRadius: 48, justifyContent: "center", alignItems: "center", marginBottom: 10, borderColor: "#c7da30", borderWidth: 2 },
   modalButtonText: { color: "#1aaed3ff", fontWeight: "bold", fontSize: 16 },
+  readOnlyField: {
+    borderWidth: 2,
+    borderColor: "#c7da30",
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 15,
+    backgroundColor: "#f5f5f5",
+    width: "100%",
+    height: 48,
+    justifyContent: "center",
+    fontFamily: "Montserrat",
+  },
   loadingOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", position: "absolute", width: "100%", height: "100%", zIndex: 1000 },
   loadingContainer: { width: 180, padding: 20, backgroundColor: "#fff", borderRadius: 12, justifyContent: "center", alignItems: "center" },
   loadingText: { marginTop: 10, fontSize: 16, color: "#000", fontFamily: "Montserrat" },
