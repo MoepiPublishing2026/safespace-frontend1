@@ -63,6 +63,9 @@ export default function EditReportScreen() {
   const router = useRouter();
   const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [abuseTypeItems, setAbuseTypeItems] = useState<any[]>([]);
+  const [abuseTypeOpen, setAbuseTypeOpen] = useState(false);
+  const [selectedAbuseType, setSelectedAbuseType] = useState("");
   const [selectedSubtype, setSelectedSubtype] = useState("");
   const [subtypeItems, setSubtypeItems] = useState<any[]>([]);
   const [subtypeOpen, setSubtypeOpen] = useState(false);
@@ -88,7 +91,8 @@ export default function EditReportScreen() {
       .get(`${BACKEND_URL}/reports/case/${case_number}`)
       .then((res) => {
         setReport(res.data);
-        setSelectedSubtype(String(res.data.subtype_id));
+        setSelectedAbuseType(String(res.data.abuse_type_id));
+        
         if (res.data.image_path) {
           try {
             const files = JSON.parse(res.data.image_path);
@@ -112,18 +116,49 @@ export default function EditReportScreen() {
       .catch(() => console.error("Failed to fetch report."));
   }, [case_number]);
 
+  // Abuse types
+  useEffect(() => {
+    axios
+      .get(`${BACKEND_URL}/reports/abuse-types`)
+      .then((res) => {
+        const formatted = res.data.map((a: any) => ({
+          label: a.abuse_type_name,
+          value: String(a.id),
+        }));
+        setAbuseTypeItems(formatted);
+      })
+      .catch(() => console.error("Failed to load abuse types."));
+  }, []);
+
   // Fetch subtypes
   useEffect(() => {
-    if (!report?.abuse_type_id) return;
+    if (!selectedAbuseType || !report) return;
+  
     axios
-      .get(`${BACKEND_URL}/reports/subtypes/${report.abuse_type_id}`)
+      .get(`${BACKEND_URL}/reports/subtypes/${selectedAbuseType}`)
       .then((res) => {
-        const formatted = res.data.map((s: any) => ({ label: s.sub_type_name, value: String(s.id) }));
+        const formatted = res.data.map((s: any) => ({
+          label: s.sub_type_name,
+          value: String(s.id),
+        }));
+  
         setSubtypeItems(formatted);
-        if (report.subtype_id) setSelectedSubtype(String(report.subtype_id));
+  
+        // ✅ Set subtype AFTER items are ready
+        const initialSubtype = String(report.subtype_id);
+  
+        const exists = formatted.find(
+          (item: any) => item.value === initialSubtype
+        );
+  
+        if (exists) {
+          setSelectedSubtype(initialSubtype);
+        } else {
+          setSelectedSubtype("");
+        }
       })
       .catch(() => console.error("Failed to load subtypes."));
-  }, [report?.abuse_type_id]);
+  }, [selectedAbuseType, report]);
 
   useEffect(() => {
     return () => {
@@ -253,6 +288,7 @@ export default function EditReportScreen() {
     setLoading(true);
     try {
       const formData = new FormData();
+      formData.append("abuse_type_id", selectedAbuseType);
       formData.append("description", report.description?.trim() || "");
       formData.append("phone_number", report.phone_number);
       formData.append("full_name", isAnonymous ? "" : report.full_name);
@@ -315,7 +351,7 @@ export default function EditReportScreen() {
         <ActivityIndicator size="large" color="#c7da30" />
       </View>
     );
-    const isAnonymous = report.is_anonymous == 1;
+  const isAnonymous = report.is_anonymous == 1;
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -328,6 +364,30 @@ export default function EditReportScreen() {
         </View>
 
         <View style={styles.formWrapper}>
+        <View style={[styles.inputGroup, { zIndex: 6000 }]}>
+  <Text style={styles.label}>Abuse Type</Text>
+  <DropDownPicker
+    open={abuseTypeOpen}
+    value={selectedAbuseType}
+    items={abuseTypeItems}
+    setOpen={setAbuseTypeOpen}
+    setValue={(callback) => {
+      const value = callback(selectedAbuseType);
+      setSelectedAbuseType(value);
+
+      // 🔥 update report immediately
+      updateReportField("abuse_type_id", value);
+
+      // 🔥 reset subtype when abuse type changes
+      setSelectedSubtype("");
+      setSubtypeItems([]);
+    }}
+    setItems={setAbuseTypeItems}
+    placeholder="Select Abuse Type"
+    style={styles.pickerWrapper}
+    dropDownContainerStyle={styles.pickerDropdown}
+  />
+</View>
           {/* Subtype */}
           <View style={[styles.inputGroup, { zIndex: 5000 }]}>
             <Text style={styles.label}>Subtype</Text>
@@ -343,6 +403,7 @@ export default function EditReportScreen() {
               dropDownContainerStyle={styles.pickerDropdown}
               placeholderStyle={{ color: "#555" }}
               textStyle={{ fontSize: 15, color: "#000" }}
+              disabled={!selectedAbuseType}
             />
             {errors.subtype && <Text style={styles.errorText}>{errors.subtype}</Text>}
           </View>
