@@ -34,18 +34,18 @@ const ADDRESS_REGEX = /^[a-zA-Z0-9\s@#.,\-\/()]+$/;
 const GRADE_AGE_RANGES: Record<string, { min: number; max: number }> = {
   Creche: { min: 0, max: 5 },
   "Grade R": { min: 5, max: 7 },
-  "Grade 1": { min: 6, max: 10 },
-  "Grade 2": { min: 7, max: 13 },
-  "Grade 3": { min: 8, max: 14 },
-  "Grade 4": { min: 9, max: 15 },
-  "Grade 5": { min: 10, max: 16 },
-  "Grade 6": { min: 11, max: 16 },
-  "Grade 7": { min: 12, max: 16 },
-  "Grade 8": { min: 13, max: 20 },
-  "Grade 9": { min: 14, max: 20 },
-  "Grade 10": { min: 15, max: 20 },
-  "Grade 11": { min: 16, max: 20 },
-  "Grade 12": { min: 17, max: 22 },
+  "Grade 1": { min: 6, max: 8 },
+  "Grade 2": { min: 7, max: 9 },
+  "Grade 3": { min: 8, max: 10 },
+  "Grade 4": { min: 9, max: 12 },
+  "Grade 5": { min: 11, max: 13 },
+  "Grade 6": { min: 12, max: 14 },
+  "Grade 7": { min: 13, max: 15 },
+  "Grade 8": { min: 14, max: 16 },
+  "Grade 9": { min: 15, max: 17 },
+  "Grade 10": { min: 16, max: 18 },
+  "Grade 11": { min: 17, max: 19 },
+  "Grade 12": { min: 18, max: 22 },
   College: { min: 16, max: 99 },
 };
 
@@ -69,6 +69,7 @@ export default function EditReportScreen() {
   const [selectedSubtype, setSelectedSubtype] = useState("");
   const [subtypeItems, setSubtypeItems] = useState<any[]>([]);
   const [subtypeOpen, setSubtypeOpen] = useState(false);
+  const [otherSubtype, setOtherSubtype] = useState("");
   const [media, setMedia] = useState<any[]>([]);
   const [menuVisible, setMenuVisible] = useState(false);
   const slideAnim = useState(new Animated.Value(width))[0];
@@ -93,7 +94,14 @@ export default function EditReportScreen() {
         setReport(res.data);
         setSelectedAbuseType(String(res.data.abuse_type_id));
         setSelectedSubtype(String(res.data.subtype_id));
-        
+
+        // ✅ Set otherSubtype if it exists
+        if (res.data.other_subtype) {
+          setOtherSubtype(res.data.other_subtype);
+        } else {
+          setOtherSubtype(""); // reset if not present
+        }
+
         if (res.data.image_path) {
           try {
             const files = JSON.parse(res.data.image_path);
@@ -117,7 +125,7 @@ export default function EditReportScreen() {
       .catch(() => console.error("Failed to fetch report."));
   }, [case_number]);
 
-  
+
   useEffect(() => {
     axios.get(`${BACKEND_URL}/reports/abuse-types`)
       .then(res => {
@@ -127,12 +135,12 @@ export default function EditReportScreen() {
         }));
         setAbuseTypeItems(formatted);
       })
-      .catch(err => console.log("Failed to load abuse types", err));
+      .catch(err => console.log("Failed to load report types", err));
   }, []);
 
   useEffect(() => {
     if (!selectedAbuseType) return;
-  
+
     axios
       .get(`${BACKEND_URL}/reports/subtypes/${selectedAbuseType}`)
       .then((res) => {
@@ -140,9 +148,9 @@ export default function EditReportScreen() {
           label: item.sub_type_name,
           value: String(item.id),
         }));
-  
+
         setSubtypeItems(formatted);
-  
+
         // ✅ IMPORTANT: re-set subtype AFTER items load
         if (report?.subtype_id) {
           setSelectedSubtype(String(report.subtype_id));
@@ -158,6 +166,12 @@ export default function EditReportScreen() {
       }
     };
   }, [sound]);
+
+  useEffect(() => {
+    if (!isOtherSubtype() && !report?.other_subtype) {
+      setOtherSubtype("");
+    }
+  }, [selectedSubtype]);
 
   const isOtherSubtype = () => {
     const selected = subtypeItems.find(
@@ -231,8 +245,7 @@ export default function EditReportScreen() {
   };
 
   useEffect(() => {
-    // Only reset if user manually changes it AFTER load
-    if (report) {
+    if (report && !report.subtype_id) {
       setSelectedSubtype("");
     }
   }, [selectedAbuseType]);
@@ -272,6 +285,10 @@ export default function EditReportScreen() {
       if (!report.description || report.description.trim() === "") {
         newErrors.description = "Description is required when subtype is 'Other'.";
       }
+
+      if (!otherSubtype || otherSubtype.trim() === "") {
+        newErrors.otherSubtype = "Please specify the subtype.";
+      }
     } else if (report.description && report.description.length > 500) {
       newErrors.description = "Description must be under 500 characters.";
     }
@@ -298,6 +315,10 @@ export default function EditReportScreen() {
       formData.append("status", report.status);
       formData.append("subtype_id", selectedSubtype.toString());
       formData.append("grade", report.grade);
+
+      if (isOtherSubtype()) {
+        formData.append("other_subtype", otherSubtype);
+      }
 
       // Existing vs new files
       const existingFiles = media.filter((m) => m.uri.startsWith(BACKEND_URL)).map((m) => m.uri.replace(BACKEND_URL, ""));
@@ -351,6 +372,9 @@ export default function EditReportScreen() {
       </View>
     );
   const isAnonymous = report.is_anonymous == 1;
+  const shouldShowOtherField =
+  (report?.other_subtype && report.other_subtype.trim() !== "") ||
+  isOtherSubtype();
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -364,49 +388,66 @@ export default function EditReportScreen() {
 
         <View style={styles.formWrapper}>
 
-        {/* Abuse Type */}
+          {/* `Report Type */}
 
           {/* Subtype */}
-          {/* Abuse Type */}
+          {/* Report Type */}
           <View style={styles.inputGroup}>
-  <Text style={styles.label}>Abuse Type</Text>
+            <Text style={styles.label}>Report Type</Text>
 
-  <DropDownPicker
-    open={abuseTypeOpen}
-    value={selectedAbuseType}
-    items={abuseTypeItems}
-    setOpen={setAbuseTypeOpen}
-    setValue={setSelectedAbuseType}
-    setItems={setAbuseTypeItems}
-    placeholder="Select abuse type"
-    style={styles.pickerWrapper}
-    dropDownContainerStyle={styles.pickerDropdown}
-    zIndex={3000}
-  />
-</View>
+            <DropDownPicker
+              open={abuseTypeOpen}
+              value={selectedAbuseType}
+              items={abuseTypeItems}
+              setOpen={setAbuseTypeOpen}
+              setValue={setSelectedAbuseType}
+              setItems={setAbuseTypeItems}
+              placeholder="Select abuse type"
+              style={styles.pickerWrapper}
+              dropDownContainerStyle={styles.pickerDropdown}
+              zIndex={3000}
+            />
+          </View>
 
-{/* Subtype */}
-<View style={styles.inputGroup}>
-  <Text style={styles.label}>Subtype</Text>
+          {/* Subtype */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Subtype</Text>
 
-  <DropDownPicker
-    open={subtypeOpen}
-    value={selectedSubtype}
-    items={subtypeItems}
-    setOpen={setSubtypeOpen}
-    setValue={setSelectedSubtype}
-    setItems={setSubtypeItems}
-    placeholder="Select subtype"
-    style={styles.pickerWrapper}
-    dropDownContainerStyle={styles.pickerDropdown}
-    zIndex={2000}
-  />
+            <DropDownPicker
+              open={subtypeOpen}
+              value={selectedSubtype}
+              items={subtypeItems}
+              setOpen={setSubtypeOpen}
+              setValue={setSelectedSubtype}
+              setItems={setSubtypeItems}
+              placeholder="Select subtype"
+              style={styles.pickerWrapper}
+              dropDownContainerStyle={styles.pickerDropdown}
+              zIndex={2000}
+            />
 
-  {errors.subtype && (
-    <Text style={styles.errorText}>{errors.subtype}</Text>
-  )}
-</View>
-          
+            {errors.subtype && (
+              <Text style={styles.errorText}>{errors.subtype}</Text>
+            )}
+          </View>
+
+          {/* Show if selected subtype is Other OR otherSubtype exists */}
+          {shouldShowOtherField && (
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Please Specify</Text>
+              <TextInput
+                style={styles.input}
+                value={otherSubtype}
+                onChangeText={setOtherSubtype}
+                placeholder="Enter subtype"
+                editable={isOtherSubtype() || !!otherSubtype}
+              />
+              {errors.otherSubtype && (
+                <Text style={styles.errorText}>{errors.otherSubtype}</Text>
+              )}
+            </View>
+          )}
+
 
           {/* Full Name */}
           {!isAnonymous && (

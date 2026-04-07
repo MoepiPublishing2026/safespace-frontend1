@@ -37,7 +37,7 @@ export default function MenuToggle({ menuVisible, slideAnim, onNavigate, onBack,
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => onNavigate("/report-screen")} style={styles.menuItem}>
-          <Text style={styles.menuText}>Reports</Text>
+          <Text style={styles.menuText}>Report</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => onNavigate("/check-status")} style={styles.menuItem}>
