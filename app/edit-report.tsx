@@ -77,6 +77,7 @@ export default function EditReportScreen() {
   const [errors, setErrors] = useState<any>({});
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [currentAudio, setCurrentAudio] = useState<string | null>(null);
+  
 
 
 
@@ -379,7 +380,7 @@ export default function EditReportScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <TopBar menuVisible={menuVisible} onBack={() => router.back()} onToggleMenu={toggleMenu} />
-      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled" nestedScrollEnabled={true}>
         {/* Header */}
         <View style={{ alignItems: "center", marginBottom: 20 }}>
           <Text style={styles.title}>Edit Report</Text>
@@ -406,6 +407,9 @@ export default function EditReportScreen() {
               style={styles.pickerWrapper}
               dropDownContainerStyle={styles.pickerDropdown}
               zIndex={3000}
+              zIndexInverse={1000}
+
+              listMode="SCROLLVIEW"
             />
           </View>
 
@@ -424,6 +428,8 @@ export default function EditReportScreen() {
               style={styles.pickerWrapper}
               dropDownContainerStyle={styles.pickerDropdown}
               zIndex={2000}
+              zIndexInverse={2000}
+              listMode="SCROLLVIEW"
             />
 
             {errors.subtype && (
