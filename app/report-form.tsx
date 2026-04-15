@@ -23,6 +23,7 @@ import {
 
 import DropDownPicker from "react-native-dropdown-picker";
 
+import { validateAgeGrade } from "@/components/ageGradeValidator";
 import MenuToggle from "@/components/menuToggle";
 import TopBar from "@/components/toBar";
 
@@ -31,33 +32,6 @@ const { width, height } = Dimensions.get("window");
 // Allow common address characters
 const ADDRESS_REGEX = /^[a-zA-Z0-9\s@#.,\-\/()]+$/;
 
-// Age–Grade ranges
-const GRADE_AGE_RANGES: Record<string, { min: number; max: number }> = {
-  Creche: { min: 0, max: 5 },
-  "Grade R": { min: 5, max: 7 },
-  "Grade 1": { min: 6, max: 8 },
-  "Grade 2": { min: 7, max: 9 },
-  "Grade 3": { min: 8, max: 10 },
-  "Grade 4": { min: 9, max: 12 },
-  "Grade 5": { min: 11, max: 13 },
-  "Grade 6": { min: 12, max: 14 },
-  "Grade 7": { min: 13, max: 15 },
-  "Grade 8": { min: 14, max: 16 },
-  "Grade 9": { min: 15, max: 17 },
-  "Grade 10": { min: 16, max: 18 },
-  "Grade 11": { min: 17, max: 19 },
-  "Grade 12": { min: 18, max: 22 },
-  College: { min: 16, max: 99 },
-};
-
-const validateAgeGrade = (age: number, grade: string) => {
-  const normalizedGrade = grade?.trim();
-  const range = GRADE_AGE_RANGES[normalizedGrade];
-  if (!range) return { status: "error", message: "Invalid grade supplied" };
- if (age < range.min || age > range.max)
-    return { status: "warning", message: `Age ${age} is unusual for ${normalizedGrade}` };
-    return { status: "ok" };
-};
 
 
 export default function CreateReportScreen() {
@@ -253,7 +227,9 @@ export default function CreateReportScreen() {
       newErrors.description = "Description is required for this report.";
 
     // --- Location validation (special characters allowed) ---
-    if (location) {
+    if (!location || !location.trim()) {
+      newErrors.location = "Address is required.";
+    } else {
       if (location.length < 5 || location.length > 50) {
         newErrors.location = "Address must be between 5 and 50 characters.";
       } else if (!ADDRESS_REGEX.test(location)) {
@@ -481,7 +457,7 @@ export default function CreateReportScreen() {
 
             </View>
             <View style={styles.fieldLast}>
-              <Text style={styles.label}>School Name</Text>
+              <Text style={styles.label}>Name of School</Text>
               <TextInput
                 style={styles.input}
                 value={school}
@@ -582,7 +558,7 @@ export default function CreateReportScreen() {
 
           <View style={styles.row}>
             <View style={styles.field}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>Email Address</Text>
               <TextInput
                 style={styles.input}
                 value={email}

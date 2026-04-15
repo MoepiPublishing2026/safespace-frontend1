@@ -1,3 +1,4 @@
+import { validateAgeGrade } from "@/components/ageGradeValidator";
 import MenuToggle from "@/components/menuToggle";
 import TopBar from "@/components/toBar";
 import { BACKEND_URL } from "@/utils/config";
@@ -30,33 +31,8 @@ const { width } = Dimensions.get("window");
 // Allow common address characters
 const ADDRESS_REGEX = /^[a-zA-Z0-9\s@#.,\-\/()]+$/;
 
-// Age–Grade ranges
-const GRADE_AGE_RANGES: Record<string, { min: number; max: number }> = {
-  Creche: { min: 0, max: 5 },
-  "Grade R": { min: 5, max: 7 },
-  "Grade 1": { min: 6, max: 8 },
-  "Grade 2": { min: 7, max: 9 },
-  "Grade 3": { min: 8, max: 10 },
-  "Grade 4": { min: 9, max: 12 },
-  "Grade 5": { min: 11, max: 13 },
-  "Grade 6": { min: 12, max: 14 },
-  "Grade 7": { min: 13, max: 15 },
-  "Grade 8": { min: 14, max: 16 },
-  "Grade 9": { min: 15, max: 17 },
-  "Grade 10": { min: 16, max: 18 },
-  "Grade 11": { min: 17, max: 19 },
-  "Grade 12": { min: 18, max: 22 },
-  College: { min: 16, max: 99 },
-};
 
-const validateAgeGrade = (age: number, grade: string) => {
-  const normalizedGrade = grade?.trim();
-  const range = GRADE_AGE_RANGES[normalizedGrade];
-  if (!range) return { status: "error", message: "Invalid grade entered" };
-  if (age < range.min || age > range.max)
-    return { status: "warning", message: `Age ${age} is unusual for ${normalizedGrade}` };
-  return { status: "ok" };
-};
+
 
 export default function EditReportScreen() {
   const { case_number } = useLocalSearchParams();
@@ -69,7 +45,6 @@ export default function EditReportScreen() {
   const [selectedSubtype, setSelectedSubtype] = useState("");
   const [subtypeItems, setSubtypeItems] = useState<any[]>([]);
   const [subtypeOpen, setSubtypeOpen] = useState(false);
-  const [otherSubtype, setOtherSubtype] = useState("");
   const [media, setMedia] = useState<any[]>([]);
   const [menuVisible, setMenuVisible] = useState(false);
   const slideAnim = useState(new Animated.Value(width))[0];
@@ -77,7 +52,7 @@ export default function EditReportScreen() {
   const [errors, setErrors] = useState<any>({});
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [currentAudio, setCurrentAudio] = useState<string | null>(null);
-  
+  const isAnonymous = report?.is_anonymous == 1;
 
 
 
@@ -96,12 +71,7 @@ export default function EditReportScreen() {
         setSelectedAbuseType(String(res.data.abuse_type_id));
         setSelectedSubtype(String(res.data.subtype_id));
 
-        // ✅ Set otherSubtype if it exists
-        if (res.data.other_subtype) {
-          setOtherSubtype(res.data.other_subtype);
-        } else {
-          setOtherSubtype(""); // reset if not present
-        }
+
 
         if (res.data.image_path) {
           try {
@@ -168,11 +138,7 @@ export default function EditReportScreen() {
     };
   }, [sound]);
 
-  useEffect(() => {
-    if (!isOtherSubtype() && !report?.other_subtype) {
-      setOtherSubtype("");
-    }
-  }, [selectedSubtype]);
+
 
   const isOtherSubtype = () => {
     const selected = subtypeItems.find(
@@ -282,16 +248,15 @@ export default function EditReportScreen() {
     else if (report.school_name.length > 50) newErrors.school_name = "School name must be less than 50 chars.";
     if (!report.status) newErrors.status = "Status is required.";
 
+
     if (isOtherSubtype()) {
       if (!report.description || report.description.trim() === "") {
-        newErrors.description = "Description is required when subtype is 'Other'.";
+        newErrors.description = "Description is required.";
       }
-
-      if (!otherSubtype || otherSubtype.trim() === "") {
-        newErrors.otherSubtype = "Please specify the subtype.";
+    } else {
+      if (report.description && report.description.length > 500) {
+        newErrors.description = "Description must be under 500 characters.";
       }
-    } else if (report.description && report.description.length > 500) {
-      newErrors.description = "Description must be under 500 characters.";
     }
     if (report.location) {
       if (report.location.length < 5 || report.location.length > 50)
@@ -317,9 +282,7 @@ export default function EditReportScreen() {
       formData.append("subtype_id", selectedSubtype.toString());
       formData.append("grade", report.grade);
 
-      if (isOtherSubtype()) {
-        formData.append("other_subtype", otherSubtype);
-      }
+
 
       // Existing vs new files
       const existingFiles = media.filter((m) => m.uri.startsWith(BACKEND_URL)).map((m) => m.uri.replace(BACKEND_URL, ""));
@@ -372,10 +335,7 @@ export default function EditReportScreen() {
         <ActivityIndicator size="large" color="#c7da30" />
       </View>
     );
-  const isAnonymous = report.is_anonymous == 1;
-  const shouldShowOtherField =
-  (report?.other_subtype && report.other_subtype.trim() !== "") ||
-  isOtherSubtype();
+  
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -430,6 +390,7 @@ export default function EditReportScreen() {
               zIndex={2000}
               zIndexInverse={2000}
               listMode="SCROLLVIEW"
+              dropDownDirection="BOTTOM"
             />
 
             {errors.subtype && (
@@ -437,22 +398,6 @@ export default function EditReportScreen() {
             )}
           </View>
 
-          {/* Show if selected subtype is Other OR otherSubtype exists */}
-          {shouldShowOtherField && (
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Please Specify</Text>
-              <TextInput
-                style={styles.input}
-                value={otherSubtype}
-                onChangeText={setOtherSubtype}
-                placeholder="Enter subtype"
-                editable={isOtherSubtype() || !!otherSubtype}
-              />
-              {errors.otherSubtype && (
-                <Text style={styles.errorText}>{errors.otherSubtype}</Text>
-              )}
-            </View>
-          )}
 
 
           {/* Full Name */}
@@ -538,11 +483,23 @@ export default function EditReportScreen() {
 
           {/* Description */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Description</Text>
+            <Text style={styles.label}>
+              Description{" "}
+              {isOtherSubtype() ? (
+                <Text style={{ color: "red" }}>(Required)</Text>
+              ) : (
+                "(Optional)"
+              )}
+            </Text>
             <TextInput
               style={[styles.input, styles.descriptionInput]}
               value={report.description}
-              onChangeText={(text) => updateReportField("description", text)}
+              onChangeText={(text) => {
+                updateReportField("description", text);
+                if (errors.description) {
+                  setErrors((prev: any) => ({ ...prev, description: undefined }));
+                }
+              }}
               multiline
             />
             {errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
