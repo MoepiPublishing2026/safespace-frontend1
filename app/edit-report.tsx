@@ -375,7 +375,7 @@ export default function EditReportScreen() {
 
           {/* Subtype */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Subtype</Text>
+            <Text style={styles.label}>Sub-type</Text>
 
             <DropDownPicker
               open={subtypeOpen}
@@ -415,7 +415,7 @@ export default function EditReportScreen() {
 
           {/* Email */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>Email Address</Text>
             <TextInput
               style={styles.input}
               value={report.reporter_email}
@@ -462,7 +462,7 @@ export default function EditReportScreen() {
           {/* School & Grade */}
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 15 }}>
             <View style={{ flex: 1, marginRight: 10 }}>
-              <Text style={styles.label}>School</Text>
+              <Text style={styles.label}>Name of School</Text>
               <TextInput
                 style={styles.input}
                 value={report.school_name}

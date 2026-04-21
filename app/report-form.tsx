@@ -411,7 +411,7 @@ export default function CreateReportScreen() {
           {/* Subtype */}
           {schoolSuggestions.length === 0 && (
             <View style={styles.fullField}>
-              <Text style={styles.label}>Subtype</Text>
+              <Text style={styles.label}>Sub-type</Text>
               <DropDownPicker
                 open={subtypeOpen}
                 value={selectedSubtype}
