@@ -153,7 +153,7 @@ export default function DetailsScreen() {
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
-      setError("Please enter a case number");
+      setError("Please fill out this field");
       return;
     }
 
@@ -234,6 +234,7 @@ export default function DetailsScreen() {
           onSubmitEditing={handleSearch}
           returnKeyType="search"
         />
+        {error && <Text style={{ color: "red",marginBottom:10 ,textAlign:"center"}}>{error}</Text>}
 
         <TouchableOpacity style={styles.statusButton} onPress={handleSearch}>
           <Text style={styles.statusButtonText}>Search</Text>
@@ -245,7 +246,7 @@ export default function DetailsScreen() {
           <ActivityIndicator size="small" color="#c7da30" style={{ marginTop: 10 }} />
         )}
 
-        {error && <Text style={{ color: "red", marginTop: 10 }}>{error}</Text>}
+
 
         {searchResult && (
           <ScrollView style={styles.statusContainer}>
@@ -468,7 +469,7 @@ const styles = StyleSheet.create({
   formContainer: { width: "100%", borderWidth: 2, borderColor: "#c7da30", borderRadius: 10, padding: 20, backgroundColor: "#fff" },
   input: { width: "100%", height: 50, borderWidth: 2, borderColor: "#c7da30", borderRadius: 8, paddingHorizontal: 15, fontSize: 16, marginBottom: 10, fontFamily: "Montserrat" },
   statusButton: { backgroundColor: "#fff", width: "100%", padding: 10, borderRadius: 48, justifyContent: "center", alignItems: "center", marginBottom: 10, borderColor: "#c7da30", borderWidth: 2 },
-  statusButtonText: { color: "#1aaed3ff", fontWeight: "bold", fontSize: 16},
+  statusButtonText: { color: "#1aaed3ff", fontWeight: "bold", fontSize: 16 },
   caseStatusLabel: { fontSize: 16, fontWeight: "bold", marginVertical: 10, textAlign: "center", fontFamily: "Montserrat" },
   statusContainer: { width: "100%", maxHeight: 300, marginTop: 10, flexGrow: 0 },
   caseItem: { backgroundColor: "#f9f9f9", padding: 15, borderRadius: 8, borderWidth: 1, borderColor: "#eee", marginBottom: 10 },

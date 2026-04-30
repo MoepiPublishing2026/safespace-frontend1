@@ -750,7 +750,7 @@ export default function CreateReportScreen() {
         {successModalVisible && !loading && (
           <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
-              <Text style={styles.modalTitle}>DETAILS SUBMITTED SUCCESSFULLY</Text>
+              <Text style={styles.modalTitle}>REPORT SUBMITTED SUCCESSFULLY</Text>
 
 
               <Image

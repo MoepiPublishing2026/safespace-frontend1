@@ -582,7 +582,7 @@ export default function EditReportScreen() {
             <View style={styles.modalContainer}>
               <Text style={styles.modalTitle}>REPORT UPDATED SUCCESSFULLY</Text>
               <Image source={require("../assets/images/right.jpeg")} style={{ width: 60, height: 60, marginBottom: 15 }} resizeMode="contain" />
-              <Text style={styles.modalCase}>CASE NUMBER: {case_number}</Text>
+              <Text style={styles.modalCase}>REFERENCE NUMBER: {case_number}</Text>
               <TouchableOpacity
                 style={styles.modalButton}
                 onPress={() => {

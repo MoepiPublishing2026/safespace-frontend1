@@ -53,15 +53,16 @@ export default function ReportCaseScreen() {
   return (
     <View style={styles.container}>
       {/* Top bar: logo and menu icon */}
+      <View style = {{marginTop:-45 }}>
        <TopBar
              menuVisible={menuVisible}
              onBack={() => router.back()}
              onToggleMenu={toggleMenu}
-           />
-     
+        />
+      </View>  
 
       {/* Centered content */}
-      <View style={styles.centerContent}>
+      <View style={[styles.centerContent , { marginTop: -100 }]}> 
         <Text style={styles.questionText}>REPORT ANONYMOUSLY?</Text>
 
         <View style={styles.conditionBox}>
@@ -116,6 +117,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     paddingHorizontal: width * 0.05, // scales with screen
+    
   },
   centerContent: {
     flex: 1,
