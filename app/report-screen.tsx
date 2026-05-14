@@ -52,17 +52,15 @@ export default function ReportCaseScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Top bar: logo and menu icon */}
-      <View style = {{marginTop:-45 }}>
-       <TopBar
-             menuVisible={menuVisible}
-             onBack={() => router.back()}
-             onToggleMenu={toggleMenu}
-        />
-      </View>  
+      {/* Top bar */}
+      <TopBar
+        menuVisible={menuVisible}
+        onBack={() => router.back()}
+        onToggleMenu={toggleMenu}
+      />
 
-      {/* Centered content */}
-      <View style={[styles.centerContent , { marginTop: -100 }]}> 
+      {/* Main content */}
+      <View style={styles.centerContent}>
         <Text style={styles.questionText}>REPORT ANONYMOUSLY?</Text>
 
         <View style={styles.conditionBox}>
@@ -92,73 +90,83 @@ export default function ReportCaseScreen() {
         </View>
       </View>
 
-      {/* Slide-in menu from right */}
+      {/* Overlay */}
       {menuVisible && (
         <TouchableOpacity style={styles.overlay} onPress={toggleMenu} />
       )}
-        <MenuToggle
-              menuVisible={menuVisible}
-              slideAnim={slideAnim}
-              onNavigate={handleNavigate}
-              onBack={() => {
-                if (router.canGoBack()) {
-                  router.back();
-                } else {
-                  router.push("/"); 
-                }
-              }}
-              onClose={() => setMenuVisible(false)}
-            />
+
+      {/* Slide Menu */}
+      <MenuToggle
+        menuVisible={menuVisible}
+        slideAnim={slideAnim}
+        onNavigate={handleNavigate}
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.push("/");
+          }
+        }}
+        onClose={() => setMenuVisible(false)}
+      />
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingHorizontal: width * 0.05, // scales with screen
-    
+    paddingHorizontal: width * 0.05,
   },
+
   centerContent: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
+    paddingTop: height * 0.08,
   },
+
   questionText: {
-    fontSize: width * 0.06, // scales with screen width
+    fontSize: width * 0.06,
     fontWeight: "bold",
     marginBottom: height * 0.05,
     textAlign: "center",
     color: "#000",
-    fontFamily: 'Montserrat'
+    fontFamily: "Montserrat",
   },
+
   conditionBox: {
-    borderColor: '#c7da30',
+    borderColor: "#c7da30",
     borderWidth: 2,
     padding: width * 0.05,
     borderRadius: width * 0.02,
   },
+
   buttonRow: {
     flexDirection: "row",
-    gap: width * 0.08, 
+    gap: width * 0.08,
     justifyContent: "center",
   },
+
   gradientButton: {
     paddingVertical: height * 0.01,
     paddingHorizontal: width * 0.08,
     borderRadius: 255,
-    minWidth: width * 0.25, 
+    minWidth: width * 0.25,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "#c7da30",
   },
+
   choiceText: {
     color: "#1aaed3ff",
-    fontSize: width * 0.040, 
+    fontSize: width * 0.04,
     fontWeight: "bold",
-    fontFamily: 'Montserrat'
+    fontFamily: "Montserrat",
   },
+
   overlay: {
     position: "absolute",
     top: 0,
