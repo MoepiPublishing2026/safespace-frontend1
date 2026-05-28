@@ -278,7 +278,7 @@ export default function DetailsScreen() {
               </Text>
 
               <Text style={styles.detail}>
-                <Text style={styles.detailLabel}>Abuse Type: </Text>
+                <Text style={styles.detailLabel}>Report Type: </Text>
                 {searchResult.abuse_type || ""}
               </Text>
 
@@ -301,7 +301,7 @@ export default function DetailsScreen() {
               </Text>
 
               <Text style={styles.detail}>
-                <Text style={styles.detailLabel}>Phone: </Text>
+                <Text style={styles.detailLabel}>Phone Number: </Text>
                 {String(searchResult.phone_number || "")}
               </Text>
 
@@ -328,7 +328,7 @@ export default function DetailsScreen() {
               </Text>
 
               <Text style={styles.detail}>
-                <Text style={styles.detailLabel}>School: </Text>
+                <Text style={styles.detailLabel}>School Name: </Text>
                 {String(searchResult.school_name || "")}
               </Text>
 

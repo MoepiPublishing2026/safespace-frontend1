@@ -246,6 +246,26 @@ export default function EditReportScreen() {
       newErrors.full_name = "Full name must be less than 50 characters.";
     if (!report.school_name) newErrors.school_name = "School name is required.";
     else if (report.school_name.length > 50) newErrors.school_name = "School name must be less than 50 chars.";
+    // --- Grade + School Type Validation ---
+    const lowerSchoolName = report.school_name?.toLowerCase() || "";
+    const lowerGrade = report.grade?.toLowerCase() || "";
+
+    // Detect primary grades
+    const isPrimaryGrade =
+      lowerGrade.includes("grade r") ||
+      lowerGrade === "creche" ||
+      ["grade 1", "grade 2", "grade 3", "grade 4", "grade 5", "grade 6", "grade 7"].includes(lowerGrade);
+
+    // Detect secondary/high school
+    const isSecondarySchool =
+      lowerSchoolName.includes("secondary") ||
+      lowerSchoolName.includes("high school");
+
+    // Block invalid combination
+    if (isPrimaryGrade && isSecondarySchool) {
+      newErrors.school_name =
+        "Grade R–7 learners cannot be linked to a secondary/high school.";
+    }
     if (!report.status) newErrors.status = "Status is required.";
 
 
@@ -335,7 +355,7 @@ export default function EditReportScreen() {
         <ActivityIndicator size="large" color="#c7da30" />
       </View>
     );
-  
+
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>

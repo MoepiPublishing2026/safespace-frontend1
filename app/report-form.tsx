@@ -218,6 +218,53 @@ export default function CreateReportScreen() {
     if (!school.trim()) newErrors.school = "School name is required.";
     else if (school.length > 50)
       newErrors.school = "School name must be less than 50 characters.";
+    // --- Grade vs School validation ---
+const lowerSchool = school.toLowerCase();
+
+const isPrimarySchool =
+  lowerSchool.includes("primary");
+
+const isSecondarySchool =
+  lowerSchool.includes("secondary") ||
+  lowerSchool.includes("high");
+
+const primaryGrades = [
+  "Creche",
+  "Grade R",
+  "Grade 1",
+  "Grade 2",
+  "Grade 3",
+  "Grade 4",
+  "Grade 5",
+  "Grade 6",
+  "Grade 7",
+];
+
+const secondaryGrades = [
+  "Grade 8",
+  "Grade 9",
+  "Grade 10",
+  "Grade 11",
+  "Grade 12",
+];
+
+// Grade R–7 cannot use secondary/high school
+if (
+  primaryGrades.includes(grade) &&
+  isSecondarySchool
+) {
+  newErrors.school =
+    "Grade R–7 learners cannot select a secondary/high school.";
+}
+
+// Grade 8–12 cannot use primary school
+if (
+  secondaryGrades.includes(grade) &&
+  isPrimarySchool
+) {
+  newErrors.school =
+    "Grade 8–12 learners cannot select a primary school.";
+}
 
     // --- Description required for "Other" subtype ---
     const descriptionRequired =
