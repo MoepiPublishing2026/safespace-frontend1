@@ -53,13 +53,13 @@ export default function ReportCaseScreen() {
   return (
     <View style={styles.container}>
       {/* Top bar: logo and menu icon */}
-      <View style = {{marginTop:-45 }}>
-       <TopBar
-             menuVisible={menuVisible}
-             onBack={() => router.back()}
-             onToggleMenu={toggleMenu}
-        />
-      </View>  
+      <View style={styles.topBar}>
+  <TopBar
+    menuVisible={menuVisible}
+    onBack={() => router.back()}
+    onToggleMenu={toggleMenu}
+  />
+</View>
 
       {/* Centered content */}
       <View style={[styles.centerContent , { marginTop: -100 }]}> 
@@ -118,6 +118,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     paddingHorizontal: width * 0.05, // scales with screen
     
+  },
+  topBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 99999,
+    elevation: 50,
   },
   centerContent: {
     flex: 1,

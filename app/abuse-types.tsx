@@ -23,13 +23,8 @@ export default function AbuseTypesScreen() {
     const slideAnim = useState(new Animated.Value(width))[0];
 
     const router = useRouter();
-   
-
     const params = useLocalSearchParams();
     const anonymous = params.anonymous;
-    const editMode = params.editMode;
-    const caseNumber = params.caseNumber;
-
 
     useEffect(() => {
         axios
@@ -65,17 +60,7 @@ export default function AbuseTypesScreen() {
         }, 250);
     };
 
-  const handleAbuseTypeSelect = (type: any) => {
-    if (editMode === "true") {
-        router.push({
-            pathname: "/edit-report",
-            params: {
-                case_number: caseNumber,
-                newAbuseTypeId: type.id,
-                newAbuseTypeName: type.type_name,
-            },
-        });
-    } else {
+    const handleAbuseTypeSelect = (type: any) => {
         router.push({
             pathname: "/report-form",
             params: {
@@ -84,16 +69,20 @@ export default function AbuseTypesScreen() {
                 anonymous,
             },
         });
-    }
-};
+    };
 
     return (
         <View style={styles.container}>
+            <View style = {{marginTop:-45 }}>
             <TopBar
                 menuVisible={menuVisible}
                 onBack={() => router.back()}
                 onToggleMenu={toggleMenu}
+                
             />
+            </View>
+
+            
 
             {abuseTypes.length === 0 ? (
                 <View style={styles.loaderContainer}>
@@ -164,12 +153,13 @@ const styles = StyleSheet.create({
     centeredContent: {
         flex: 1,
         justifyContent: "center",
+         marginTop: -height * 0.20,
     },
     title: {
         fontSize: width * 0.055,
         fontWeight: "bold",
         textAlign: "center",
-        marginBottom: height * 0.015,
+        marginBottom: height * 0.01,
         color: "#000",
         fontFamily: 'Montserrat'
     },

@@ -210,11 +210,13 @@ export default function DetailsScreen() {
   };
   return (
     <View style={styles.container}>
-      <TopBar
-        menuVisible={menuVisible}
-        onBack={() => router.back()}
-        onToggleMenu={toggleMenu}
-      />
+    <View style={{ marginTop: -45, zIndex: 10 }}>
+        <TopBar
+          menuVisible={menuVisible}
+          onBack={() => router.back()}
+          onToggleMenu={toggleMenu}
+        />
+      </View>
 
       {anonymous === "yes" && (
         <Text style={styles.anonymousText}>

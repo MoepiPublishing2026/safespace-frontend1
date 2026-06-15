@@ -69,9 +69,9 @@ export default function CreateReportScreen() {
   const slideAnim = useState(new Animated.Value(width))[0];
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [submittedCaseNumber, setSubmittedCaseNumber] = useState("");
-   const [activeMenuItem, setActiveMenuItem] = useState<string | null>(null);
-   const [attachments, setAttachments] = useState<any[]>([]);
-   const [currentAudio, setCurrentAudio] = useState<string | null>(null);
+  const [activeMenuItem, setActiveMenuItem] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<any[]>([]);
+  const [currentAudio, setCurrentAudio] = useState<string | null>(null);
 
   // 🎵 AUDIO STATE
   const [sound, setSound] = useState<Audio.Sound | null>(null);
@@ -99,7 +99,7 @@ export default function CreateReportScreen() {
       .catch((err) => console.error("Error fetching subtypes:", err));
   }, [abuseTypeId]);
 
- // Convert subtypes to dropdown items
+  // Convert subtypes to dropdown items
   useEffect(() => {
     setSubtypeItems(
       subtypes.map((s) => ({ label: s.sub_type_name, value: String(s.id) }))
@@ -115,7 +115,7 @@ export default function CreateReportScreen() {
   useEffect(() => {
     return () => {
       if (sound) {
-        sound.stopAsync().then(() => sound.unloadAsync()).catch(() => {});
+        sound.stopAsync().then(() => sound.unloadAsync()).catch(() => { });
       }
     };
   }, []);
@@ -138,21 +138,21 @@ export default function CreateReportScreen() {
 
   const pickMedia = async () => {
     await stopAudio();
-  
+
     const result = await DocumentPicker.getDocumentAsync({
       type: ["image/*", "video/*", "audio/*"],
       copyToCacheDirectory: true,
       multiple: true
     });
-  
+
     if (result.canceled) return;
-  
+
     const newFiles = result.assets.map(file => ({
       uri: file.uri,
       name: file.name,
       type: file.mimeType || "application/octet-stream",
     }));
-  
+
     setAttachments(prev => [...prev, ...newFiles]);
   };
   const searchSchools = async (text: string) => {
@@ -187,7 +187,7 @@ export default function CreateReportScreen() {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
       newErrors.email = "Enter a valid email address.";
 
-   // --- Phone required and length ---
+    // --- Phone required and length ---
     if (!phone.trim()) {
       newErrors.phone = "Phone number is required.";
     } else if (!/^\d{10}$/.test(phone)) {
@@ -219,52 +219,52 @@ export default function CreateReportScreen() {
     else if (school.length > 50)
       newErrors.school = "School name must be less than 50 characters.";
     // --- Grade vs School validation ---
-const lowerSchool = school.toLowerCase();
+    const lowerSchool = school.toLowerCase();
 
-const isPrimarySchool =
-  lowerSchool.includes("primary");
+    const isPrimarySchool =
+      lowerSchool.includes("primary");
 
-const isSecondarySchool =
-  lowerSchool.includes("secondary") ||
-  lowerSchool.includes("high");
+    const isSecondarySchool =
+      lowerSchool.includes("secondary") ||
+      lowerSchool.includes("high");
 
-const primaryGrades = [
-  "Creche",
-  "Grade R",
-  "Grade 1",
-  "Grade 2",
-  "Grade 3",
-  "Grade 4",
-  "Grade 5",
-  "Grade 6",
-  "Grade 7",
-];
+    const primaryGrades = [
+      "Creche",
+      "Grade R",
+      "Grade 1",
+      "Grade 2",
+      "Grade 3",
+      "Grade 4",
+      "Grade 5",
+      "Grade 6",
+      "Grade 7",
+    ];
 
-const secondaryGrades = [
-  "Grade 8",
-  "Grade 9",
-  "Grade 10",
-  "Grade 11",
-  "Grade 12",
-];
+    const secondaryGrades = [
+      "Grade 8",
+      "Grade 9",
+      "Grade 10",
+      "Grade 11",
+      "Grade 12",
+    ];
 
-// Grade R–7 cannot use secondary/high school
-if (
-  primaryGrades.includes(grade) &&
-  isSecondarySchool
-) {
-  newErrors.school =
-    "Grade R–7 learners cannot select a secondary/high school.";
-}
+    // Grade R–7 cannot use secondary/high school
+    if (
+      primaryGrades.includes(grade) &&
+      isSecondarySchool
+    ) {
+      newErrors.school =
+        "Grade R–7 learners cannot select a secondary/high school.";
+    }
 
-// Grade 8–12 cannot use primary school
-if (
-  secondaryGrades.includes(grade) &&
-  isPrimarySchool
-) {
-  newErrors.school =
-    "Grade 8–12 learners cannot select a primary school.";
-}
+    // Grade 8–12 cannot use primary school
+    if (
+      secondaryGrades.includes(grade) &&
+      isPrimarySchool
+    ) {
+      newErrors.school =
+        "Grade 8–12 learners cannot select a primary school.";
+    }
 
     // --- Description required for "Other" subtype ---
     const descriptionRequired =
@@ -286,7 +286,7 @@ if (
 
     setErrors(newErrors);
 
-    
+
 
     // Return true if no errors
     return Object.keys(newErrors).length === 0;
@@ -358,7 +358,7 @@ if (
       setSchoolSuggestions([]);
       setErrors({});
 
-     // Stop audio when form resets
+      // Stop audio when form resets
       await stopAudio();
     } catch (err: any) {
       console.error("Submission error:", err);
@@ -368,30 +368,30 @@ if (
     }
   };
 
-   // 🎵 Play/Pause Audio
-   const toggleAudioPreview = async (file: any) => {
+  // 🎵 Play/Pause Audio
+  const toggleAudioPreview = async (file: any) => {
     try {
       if (!file?.uri) return;
-  
+
       // If same audio is playing → pause it
       if (currentAudio === file.uri && isPlaying && sound) {
         await sound.pauseAsync();
         setIsPlaying(false);
         return;
       }
-  
+
       // Stop previous audio completely
       await stopAudio();
-  
+
       const { sound: newSound } = await Audio.Sound.createAsync(
         { uri: file.uri },
         { shouldPlay: true }
       );
-  
+
       setSound(newSound);
       setCurrentAudio(file.uri);
       setIsPlaying(true);
-  
+
       newSound.setOnPlaybackStatusUpdate((status: any) => {
         if (status.didJustFinish) {
           setIsPlaying(false);
@@ -433,12 +433,13 @@ if (
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
     >
-
-      <TopBar
-        menuVisible={menuVisible}
-        onBack={() => router.back()}
-        onToggleMenu={toggleMenu}
-      />
+      <View style={{ marginTop: -45, zIndex: 10 }}>
+        <TopBar
+          menuVisible={menuVisible}
+          onBack={() => router.back()}
+          onToggleMenu={toggleMenu}
+        />
+      </View>
       <ScrollView
         contentContainerStyle={styles.container}
         scrollEnabled={!subtypeOpen && !gradeOpen && schoolSuggestions.length === 0}
@@ -448,7 +449,7 @@ if (
       >
         <Text style={styles.title}>REPORT A CASE</Text>
         {isAnonymous && (
-          <Text style={{ color: "black", marginBottom: 10 ,fontSize: width * 0.04}}>
+          <Text style={{ color: "black", marginBottom: 10, fontSize: width * 0.04 }}>
             You are reporting anonymously
           </Text>
         )}
@@ -700,73 +701,73 @@ if (
                 <Text style={styles.chooseFileText}>Choose File</Text>
               </TouchableOpacity>
               <Text style={styles.fileNameText}>
-              {attachments.length > 0
-  ? `${attachments.length} file(s) selected`
-  : "No file chosen"}
+                {attachments.length > 0
+                  ? `${attachments.length} file(s) selected`
+                  : "No file chosen"}
 
 
               </Text>
             </View>
 
-           
+
             {attachments.map((file, index) => (
-  <View key={index} style={{ marginBottom: 12 }}>
+              <View key={index} style={{ marginBottom: 12 }}>
 
-    {/* IMAGE */}
-    {file.type?.startsWith("image") && (
-      <Image
-        source={{ uri: file.uri }}
-        style={styles.imagePreview}
-      />
-    )}
+                {/* IMAGE */}
+                {file.type?.startsWith("image") && (
+                  <Image
+                    source={{ uri: file.uri }}
+                    style={styles.imagePreview}
+                  />
+                )}
 
-    {/* VIDEO */}
-    {file.type?.startsWith("video") && (
-      <Video
-        source={{ uri: file.uri }}
-        style={styles.videoPreview}
-        useNativeControls
-        resizeMode={"contain" as any}
-      />
-    )}
+                {/* VIDEO */}
+                {file.type?.startsWith("video") && (
+                  <Video
+                    source={{ uri: file.uri }}
+                    style={styles.videoPreview}
+                    useNativeControls
+                    resizeMode={"contain" as any}
+                  />
+                )}
 
-    {/* AUDIO */}
-    {file.type?.startsWith("audio") && (
-  <TouchableOpacity
-    onPress={async () => {
-      toggleAudioPreview(file);
-    }}
-    style={{
-      borderWidth: 2,
-      borderColor: "#c7da30",
-      borderRadius: 8,
-      padding: 10,
-      alignItems: "center",
-    }}
-  >
-    <Text>
-      {currentAudio === file.uri && isPlaying
-        ? "⏸ Pause Audio"
-        : "▶ Play Audio"}
-    </Text>
-  </TouchableOpacity>
-)}
+                {/* AUDIO */}
+                {file.type?.startsWith("audio") && (
+                  <TouchableOpacity
+                    onPress={async () => {
+                      toggleAudioPreview(file);
+                    }}
+                    style={{
+                      borderWidth: 2,
+                      borderColor: "#c7da30",
+                      borderRadius: 8,
+                      padding: 10,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text>
+                      {currentAudio === file.uri && isPlaying
+                        ? "⏸ Pause Audio"
+                        : "▶ Play Audio"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
-    {/* REMOVE BUTTON */}
-    <TouchableOpacity
-      onPress={() =>
-        setAttachments(prev => prev.filter((_, i) => i !== index))
-      }
-    >
-      <Text style={{ color: "red", textAlign: "center", marginTop: 5 }}>
-        Remove
-      </Text>
-    </TouchableOpacity>
+                {/* REMOVE BUTTON */}
+                <TouchableOpacity
+                  onPress={() =>
+                    setAttachments(prev => prev.filter((_, i) => i !== index))
+                  }
+                >
+                  <Text style={{ color: "red", textAlign: "center", marginTop: 5 }}>
+                    Remove
+                  </Text>
+                </TouchableOpacity>
 
-  </View>
-))}
+              </View>
+            ))}
 
-           
+
 
           </View>
 

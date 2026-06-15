@@ -63,6 +63,11 @@ export default function Index() {
           />
         </View>
 
+{/* Safety Text */}
+<Text style={styles.safetyText}>
+  Report Abuse {"\n"} Safely and {"\n"} Anonymously
+</Text>
+
         {/* Hero Section */}
         <View style={styles.heroSection}>
           <Image
@@ -124,12 +129,19 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     backgroundColor: "#FFFFFF",
+    paddingBottom: 90,
   },
-
+  safetyText: {
+    fontSize: width * 0.090,
+    fontWeight: "bold",
+    color: "#c7da30",
+    textAlign: "center",
+    fontFamily: "Montserrat",
+  },
   heroSection: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: height * 0.05,
+    paddingVertical: height * 0.02,
     paddingHorizontal: width * 0.05,
   },
 
@@ -146,7 +158,7 @@ const styles = StyleSheet.create({
 
   heroImage: {
     width: "100%",
-    height: height * 0.45,
+    height: height * 0.38,
     alignSelf: "center",
     marginBottom: 20,
   },

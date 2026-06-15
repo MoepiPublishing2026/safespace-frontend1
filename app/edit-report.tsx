@@ -359,7 +359,13 @@ export default function EditReportScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <TopBar menuVisible={menuVisible} onBack={() => router.back()} onToggleMenu={toggleMenu} />
+      <View style={{ marginTop: -45 }}>
+        <TopBar
+          menuVisible={menuVisible}
+          onBack={() => router.back()}
+          onToggleMenu={toggleMenu}
+        />
+      </View>
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled" nestedScrollEnabled={true}>
         {/* Header */}
         <View style={{ alignItems: "center", marginBottom: 20 }}>
