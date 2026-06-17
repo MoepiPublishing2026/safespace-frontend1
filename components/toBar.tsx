@@ -13,24 +13,23 @@ interface TopBarProps {
 export default function TopBar({ menuVisible, onBack, onToggleMenu }: TopBarProps) {
   return (
     <View style={styles.topBar}>
+       {/* Logo always visible */}
+      <Image
+        source={require("../assets/images/Logo.png")}
+        style={styles.logo}
+        resizeMode="contain"
+      />
+      
+       {/* Menu button - only show when menu is NOT visible */}
       {!menuVisible && (
-        <>
-
-          <Image
-            source={require("../assets/images/Logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-
-
-          <TouchableOpacity onPress={onToggleMenu}>
-            <Ionicons name="menu" size={width * 0.08} color="#c7da30" />
-          </TouchableOpacity>
-        </>
+      <TouchableOpacity onPress={onToggleMenu}>
+        <Ionicons name="menu" size={width * 0.08} color="#c7da30" />
+      </TouchableOpacity>
       )}
     </View>
   );
 }
+         
 
 const styles = StyleSheet.create({
   topBar: {

@@ -28,12 +28,14 @@ export default function ReportCaseScreen() {
 
   const toggleMenu = () => {
     if (menuVisible) {
+      // Close menu with animation
       Animated.timing(slideAnim, {
         toValue: width,
         duration: 250,
         useNativeDriver: true,
       }).start(() => setMenuVisible(false));
     } else {
+      // Open menu with animation
       setMenuVisible(true);
       Animated.timing(slideAnim, {
         toValue: width * 0.3,
@@ -53,13 +55,13 @@ export default function ReportCaseScreen() {
   return (
     <View style={styles.container}>
       {/* Top bar: logo and menu icon */}
-      <View style={styles.topBar}>
-  <TopBar
-    menuVisible={menuVisible}
-    onBack={() => router.back()}
-    onToggleMenu={toggleMenu}
-  />
-</View>
+      <View style = {{marginTop:-45 }}>
+       <TopBar
+             menuVisible={menuVisible}
+             onBack={() => router.back()}
+             onToggleMenu={toggleMenu}
+        />
+      </View>  
 
       {/* Centered content */}
       <View style={[styles.centerContent , { marginTop: -100 }]}> 
@@ -107,8 +109,18 @@ export default function ReportCaseScreen() {
                   router.push("/"); 
                 }
               }}
-              onClose={() => setMenuVisible(false)}
-            />
+              onClose={() => {
+    // Reset the animation value to close
+    slideAnim.setValue(width * 0.3); // Set to current open position
+    Animated.timing(slideAnim, {
+      toValue: width,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      setMenuVisible(false);
+    });
+  }}
+/>
     </View>
   );
 }
@@ -118,14 +130,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     paddingHorizontal: width * 0.05, // scales with screen
     
-  },
-  topBar: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 99999,
-    elevation: 50,
   },
   centerContent: {
     flex: 1,

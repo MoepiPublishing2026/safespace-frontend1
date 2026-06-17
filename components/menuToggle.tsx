@@ -20,6 +20,7 @@ interface MenuToggleProps {
 }
 
 export default function MenuToggle({ menuVisible, slideAnim, onNavigate, onBack, onClose }: MenuToggleProps) {
+  // Don't render if menu is not visible
   if (!menuVisible) return null;
 
   return (
@@ -37,7 +38,7 @@ export default function MenuToggle({ menuVisible, slideAnim, onNavigate, onBack,
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => onNavigate("/report-screen")} style={styles.menuItem}>
-          <Text style={styles.menuText}>Report</Text>
+          <Text style={styles.menuText}>Reports</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => onNavigate("/check-status")} style={styles.menuItem}>
@@ -68,7 +69,7 @@ const styles = StyleSheet.create({
     width: width * 0.7,
     height: "100%",
     backgroundColor: "#FFFFFF",
-    zIndex: 10,
+    zIndex: 999, // Higher zIndex
     shadowColor: "black",
   shadowOffset: { width: -5, height: 0 }, // negative X = shadow on the left
   shadowOpacity: 0.25,
@@ -91,9 +92,7 @@ const styles = StyleSheet.create({
     textAlign: "left",
     fontSize: width * 0.04,
     color: "#1aaed3ff",
-    fontWeight: "600",
-    
+    fontFamily: 'Montserrat'
   },
 });
 
-  
