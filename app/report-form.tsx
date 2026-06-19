@@ -60,6 +60,7 @@ export default function CreateReportScreen() {
     })),
   ]);
   const [school, setSchool] = useState("");
+  const [schoolProvince, setSchoolProvince] = useState("");
   const [schoolSuggestions, setSchoolSuggestions] = useState<any[]>([]);
   const [image, setImage] = useState<any>(null);
 
@@ -169,6 +170,17 @@ export default function CreateReportScreen() {
     }
   };
 
+  const provinces = [
+    "gauteng",
+    "limpopo",
+    "mpumalanga",
+    "north west",
+    "free state",
+    "kwazulu-natal",
+    "eastern cape",
+    "western cape",
+    "northern cape"
+  ];
   const validateForm = () => {
     const newErrors: typeof errors = {};
 
@@ -274,15 +286,33 @@ export default function CreateReportScreen() {
       newErrors.description = "Description is required for this report.";
 
     // --- Location validation (special characters allowed) ---
-    if (!location || !location.trim()) {
-      newErrors.location = "Address is required.";
-    } else {
-      if (location.length < 5 || location.length > 50) {
-        newErrors.location = "Address must be between 5 and 50 characters.";
-      } else if (!ADDRESS_REGEX.test(location)) {
-        newErrors.location = "Address contains invalid characters.";
-      }
+if (!location || !location.trim()) {
+  newErrors.location = "Address is required.";
+} else {
+  if (location.length < 5 || location.length > 50) {
+    newErrors.location = "Address must be between 5 and 50 characters.";
+  } else if (!ADDRESS_REGEX.test(location)) {
+    newErrors.location = "Address contains invalid characters.";
+  } else {
+    // Province check
+    const lowerLocation = location.toLowerCase();
+
+    const matchedProvince = provinces.find((province) =>
+      lowerLocation.includes(province)
+    );
+
+    if (!matchedProvince) {
+      newErrors.location = "Please include the province in the address.";
+    } else if (
+      schoolProvince &&
+      matchedProvince !== schoolProvince.toLowerCase()
+    ) {
+      newErrors.location =
+        `The selected school belongs to ${schoolProvince}, but the address is in another province.`;
     }
+  }
+}
+   
 
     setErrors(newErrors);
 
@@ -535,6 +565,7 @@ export default function CreateReportScreen() {
                     <TouchableOpacity
                       onPress={() => {
                         setSchool(item.school_name);
+                        setSchoolProvince(item.province);
                         setSchoolSuggestions([]);
                         setErrors((prev) => ({ ...prev, school: "" }));
                       }}

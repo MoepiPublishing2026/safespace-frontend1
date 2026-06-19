@@ -53,7 +53,18 @@ export default function EditReportScreen() {
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [currentAudio, setCurrentAudio] = useState<string | null>(null);
   const isAnonymous = report?.is_anonymous == 1;
-
+  const [schoolProvince, setSchoolProvince] = useState("");
+  const provinces = [
+    "gauteng",
+    "limpopo",
+    "mpumalanga",
+    "north west",
+    "free state",
+    "kwazulu-natal",
+    "eastern cape",
+    "western cape",
+    "northern cape"
+  ];
 
 
   const updateReportField = (field: string, value: any) => {
@@ -70,6 +81,7 @@ export default function EditReportScreen() {
         setReport(res.data);
         setSelectedAbuseType(String(res.data.abuse_type_id));
         setSelectedSubtype(String(res.data.subtype_id));
+        setSchoolProvince(res.data.school_province || "");
 
 
 
@@ -281,8 +293,29 @@ export default function EditReportScreen() {
     if (report.location) {
       if (report.location.length < 5 || report.location.length > 50)
         newErrors.location = "Address must be between 5 and 50 characters.";
-      else if (!ADDRESS_REGEX.test(report.location)) newErrors.location = "Address contains invalid characters.";
-    } else newErrors.location = "Address is required.";
+      else if (!ADDRESS_REGEX.test(report.location))
+        newErrors.location = "Address contains invalid characters.";
+      else {
+        // ✅ PROVINCE VALIDATION (NEW)
+        const lowerLocation = report.location.toLowerCase();
+    
+        const matchedProvince = provinces.find((province) =>
+          lowerLocation.includes(province)
+        );
+    
+        if (!matchedProvince) {
+          newErrors.location = "Please include the province in the address.";
+        } else if (
+          schoolProvince &&
+          matchedProvince !== schoolProvince.toLowerCase()
+        ) {
+          newErrors.location =
+            `The selected school belongs to ${schoolProvince}, but the address is in another province.`;
+        }
+      }
+    } else {
+      newErrors.location = "Address is required.";
+    }
 
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
