@@ -463,7 +463,7 @@ if (!location || !location.trim()) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
     >
-      <View style={{ marginTop: -45, zIndex: 10 }}>
+      <View style={{ marginTop: -45, zIndex: 10,marginBottom: -50 }}>
         <TopBar
           menuVisible={menuVisible}
           onBack={() => router.back()}
@@ -517,6 +517,8 @@ if (!location || !location.trim()) {
               <TextInput
                 style={styles.input}
                 value={age}
+                placeholder="Enter age (e.g., 15)"
+                placeholderTextColor="#999"
                 keyboardType="number-pad"
                 onChangeText={(t) => {
                   const cleaned = t.replace(/[^0-9]/g, "");
@@ -622,6 +624,8 @@ if (!location || !location.trim()) {
               <TextInput
                 style={styles.input}
                 value={fullName}
+                 placeholder="Enter your full name"
+                 placeholderTextColor="#999"
                 onChangeText={(t) => {
                   setFullName(t);
                   if (t.trim().length >= 1 && t.trim().length <= 50) {
@@ -641,6 +645,8 @@ if (!location || !location.trim()) {
               <TextInput
                 style={styles.input}
                 value={email}
+                placeholder="example@gmail.com"
+                placeholderTextColor="#999"
                 onChangeText={(t) => {
                   setEmail(t);
                   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t.trim())) {
@@ -658,6 +664,8 @@ if (!location || !location.trim()) {
               <TextInput
                 style={styles.input}
                 value={phone}
+                placeholder="e.g 0826836743"
+  placeholderTextColor="#999"
                 onChangeText={(t) => {
                   const cleaned = t.replace(/[^0-9]/g, "");
                   setPhone(cleaned);
@@ -678,6 +686,8 @@ if (!location || !location.trim()) {
             <TextInput
               style={styles.input}
               value={location}
+              placeholder="e.g.123 Main St, Gauteng"
+  placeholderTextColor="#999"
               onChangeText={(t) => {
                 setLocation(t);
                 if (t.length >= 5 && t.length <= 50) {
@@ -703,6 +713,8 @@ if (!location || !location.trim()) {
             <TextInput
               style={[styles.input, styles.descriptionInput]}
               value={description}
+              placeholder="Describe the incident (optional unless subtype is 'Other')"
+              placeholderTextColor="#999"
               onChangeText={(t) => {
                 setDescription(t);
                 const subtypeName = subtypes.find((s) => String(s.id) === selectedSubtype)
