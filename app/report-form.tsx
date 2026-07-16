@@ -32,6 +32,9 @@ const { width, height } = Dimensions.get("window");
 // Allow common address characters
 const ADDRESS_REGEX = /^[a-zA-Z0-9\s@#.,\-\/()]+$/;
 
+// --- Phone required and format ---
+const SA_PHONE_REGEX = /^(0[1-8][0-9]{8}|27[1-8][0-9]{8})$/;
+
 
 
 export default function CreateReportScreen() {
@@ -201,10 +204,10 @@ export default function CreateReportScreen() {
 
     // --- Phone required and length ---
     if (!phone.trim()) {
-      newErrors.phone = "Phone number is required.";
-    } else if (!/^\d{10}$/.test(phone)) {
-      newErrors.phone = "Phone number must be exactly 10 digits.";
-    }
+  newErrors.phone = "Phone number is required.";
+    } else if (!SA_PHONE_REGEX.test(phone)) {
+      newErrors.phone = "The phone number field format is invalid.";
+  }
 
     // --- Grade required before age ---
     if (!grade) {
@@ -667,12 +670,12 @@ if (!location || !location.trim()) {
                 placeholder="e.g 0826836743"
   placeholderTextColor="#999"
                 onChangeText={(t) => {
-                  const cleaned = t.replace(/[^0-9]/g, "");
-                  setPhone(cleaned);
-                  if (cleaned.length >= 10 && cleaned.length <= 15) {
-                    setErrors((prev) => ({ ...prev, phone: "" }));
+                const cleaned = t.replace(/[^0-9+]/g, "");
+                setPhone(cleaned);
+                if (SA_PHONE_REGEX.test(cleaned.replace(/^\+/, ""))) {
+                setErrors((prev) => ({ ...prev, phone: "" }));
                   }
-                }}
+              }}
                 keyboardType="number-pad"
               />
               {errors.phone ? <Text style={styles.errorText}>{errors.phone}</Text> : null}
@@ -747,8 +750,6 @@ if (!location || !location.trim()) {
                 {attachments.length > 0
                   ? `${attachments.length} file(s) selected`
                   : "No file chosen"}
-
-
               </Text>
             </View>
 
