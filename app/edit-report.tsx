@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
+  FlatList,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -26,13 +27,10 @@ import {
 } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 
-const { width } = Dimensions.get("window");
+const { width,height } = Dimensions.get("window");
 
 // Allow common address characters
 const ADDRESS_REGEX = /^[a-zA-Z0-9\s@#.,\-\/()]+$/;
-
-
-
 
 export default function EditReportScreen() {
   const { case_number } = useLocalSearchParams();
@@ -53,7 +51,19 @@ export default function EditReportScreen() {
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [currentAudio, setCurrentAudio] = useState<string | null>(null);
   const isAnonymous = report?.is_anonymous == 1;
+  const [school, setSchool] = useState("");  // For the text input
+  const [schoolSuggestions, setSchoolSuggestions] = useState<any[]>([]);
   const [schoolProvince, setSchoolProvince] = useState("");
+  const [grade, setGrade] = useState("");
+const [gradeOpen, setGradeOpen] = useState(false);
+const [gradeItems, setGradeItems] = useState<any[]>([
+  { label: "Creche", value: "Creche" },
+  { label: "Grade R", value: "Grade R" },
+  ...Array.from({ length: 12 }, (_, i) => ({
+    label: `Grade ${i + 1}`,
+    value: `Grade ${i + 1}`,
+  })),
+]);
   const provinces = [
     "gauteng",
     "limpopo",
@@ -72,41 +82,64 @@ export default function EditReportScreen() {
     setErrors((prev: any) => ({ ...prev, [field]: undefined }));
   };
 
-  // Fetch report
-  useEffect(() => {
-    if (!case_number) return;
-    axios
-      .get(`${BACKEND_URL}/reports/case/${case_number}`)
-      .then((res) => {
-        setReport(res.data);
-        setSelectedAbuseType(String(res.data.abuse_type_id));
-        setSelectedSubtype(String(res.data.subtype_id));
-        setSchoolProvince(res.data.school_province || "");
+  // school Search Function
+const searchSchools = async (text: string) => {
+  setSchool(text);
+  if (text.length < 1) {
+    setSchoolSuggestions([]);
+    return;
+  }
+  try {
+    const res = await axios.get(`${BACKEND_URL}/schools/search?q=${encodeURIComponent(text)}`);
+    setSchoolSuggestions(res.data);
+  } catch (err) {
+    console.error("Error fetching schools:", err);
+  }
+};
+
+// Fetch report - REPLACE your entire useEffect with this
+useEffect(() => {
+  if (!case_number) return;
+  axios
+    .get(`${BACKEND_URL}/reports/case/${case_number}`)
+    .then((res) => {
+      setReport(res.data);
+      setSelectedAbuseType(String(res.data.abuse_type_id));
+      setSelectedSubtype(String(res.data.subtype_id));
+      setSchoolProvince(res.data.school_province || "");
+
+      // ✅ ADD THIS - Initialize school with existing value
+      if (res.data.school_name) {
+        setSchool(res.data.school_name);
+      }
+      
+      if (res.data.grade) {
+  setGrade(res.data.grade);
+}
 
 
+      if (res.data.image_path) {
+        try {
+          const files = JSON.parse(res.data.image_path);
+          if (Array.isArray(files) && files.length > 0) {
+            const formattedMedia = files.map((file: string) => {
+              const fullPath = `${BACKEND_URL}${file}`;
+              const extension = file.split(".").pop()?.toLowerCase();
+              let type = "image";
+              if (["mp4", "mov"].includes(extension || "")) type = "video";
+              else if (["mp3", "wav", "m4a"].includes(extension || "")) type = "audio";
 
-        if (res.data.image_path) {
-          try {
-            const files = JSON.parse(res.data.image_path);
-            if (Array.isArray(files) && files.length > 0) {
-              const formattedMedia = files.map((file: string) => {
-                const fullPath = `${BACKEND_URL}${file}`;
-                const extension = file.split(".").pop()?.toLowerCase();
-                let type = "image";
-                if (["mp4", "mov"].includes(extension || "")) type = "video";
-                else if (["mp3", "wav", "m4a"].includes(extension || "")) type = "audio";
-
-                return { uri: fullPath, type };
-              });
-              setMedia(formattedMedia);
-            }
-          } catch (e) {
-            console.log("Error parsing media:", e);
+              return { uri: fullPath, type };
+            });
+            setMedia(formattedMedia);
           }
+        } catch (e) {
+          console.log("Error parsing media:", e);
         }
-      })
-      .catch(() => console.error("Failed to fetch report."));
-  }, [case_number]);
+      }
+    })
+    .catch(() => console.error("Failed to fetch report."));
+}, [case_number]);
 
 
   useEffect(() => {
@@ -239,45 +272,51 @@ export default function EditReportScreen() {
       newErrors.reporter_email = "Enter a valid email address.";
     if (!report.phone_number) newErrors.phone_number = "Phone number is required.";
     else if (!/^\d{10}$/.test(report.phone_number)) newErrors.phone_number = "Phone number must be 10 digits.";
-    if (!report.grade) newErrors.grade = "Grade is required.";
-    else if (!report.age) newErrors.age = "Age is required.";
-    else {
-      const check = validateAgeGrade(parseInt(String(report.age), 10), report.grade);
-      if (check.status === "error") {
-        // Invalid grade → show under grade field
-        newErrors.grade = check.message;
-      } else if (check.status === "warning") {
-        // Age unusual → show under age field
-        newErrors.age = check.message;
-      }
-    }
+if (!grade) newErrors.grade = "Grade is required.";  // ✅ Use 'grade' state
+else if (!report.age) newErrors.age = "Age is required.";
+else {
+  const check = validateAgeGrade(parseInt(String(report.age), 10), grade);  // ✅ Use 'grade' state
+  if (check.status === "error") {
+    newErrors.grade = check.message;
+  } else if (check.status === "warning") {
+    newErrors.age = check.message;
+  }
+}
     if (!isAnonymous && !report.full_name?.trim()) {
       newErrors.full_name = "Full name is required.";
     }
     else if (report.full_name && report.full_name.length > 50)
       newErrors.full_name = "Full name must be less than 50 characters.";
-    if (!report.school_name) newErrors.school_name = "School name is required.";
-    else if (report.school_name.length > 50) newErrors.school_name = "School name must be less than 50 chars.";
-    // --- Grade + School Type Validation ---
-    const lowerSchoolName = report.school_name?.toLowerCase() || "";
-    const lowerGrade = report.grade?.toLowerCase() || "";
+if (!school.trim()) {
+  newErrors.school_name = "School name is required.";
+} else if (school.length > 50) {
+  newErrors.school_name = "School name must be less than 50 characters.";
+} else {
+  // Update the report with the school value from the search input
+  updateReportField("school_name", school);
+  
+  // --- Grade + School Type Validation ---
+  const lowerSchoolName = school.toLowerCase();
+  // const lowerGrade = report.grade?.toLowerCase() || "";
+  const lowerGrade = grade.toLowerCase();  // ✅ Use 'grade' state
 
-    // Detect primary grades
-    const isPrimaryGrade =
-      lowerGrade.includes("grade r") ||
-      lowerGrade === "creche" ||
-      ["grade 1", "grade 2", "grade 3", "grade 4", "grade 5", "grade 6", "grade 7"].includes(lowerGrade);
+  // Detect primary grades
+  const isPrimaryGrade =
+    lowerGrade.includes("grade r") ||
+    lowerGrade === "creche" ||
+    ["grade 1", "grade 2", "grade 3", "grade 4", "grade 5", "grade 6", "grade 7"].includes(lowerGrade);
 
-    // Detect secondary/high school
-    const isSecondarySchool =
-      lowerSchoolName.includes("secondary") ||
-      lowerSchoolName.includes("high school");
+  // Detect secondary/high school
+  const isSecondarySchool =
+    lowerSchoolName.includes("secondary") ||
+    lowerSchoolName.includes("high school");
 
-    // Block invalid combination
-    if (isPrimaryGrade && isSecondarySchool) {
-      newErrors.school_name =
-        "Grade R–7 learners cannot be linked to a secondary/high school.";
-    }
+  // Block invalid combination
+  if (isPrimaryGrade && isSecondarySchool) {
+    newErrors.school_name =
+      "Grade R–7 learners cannot be linked to a secondary/high school.";
+  }
+}
     if (!report.status) newErrors.status = "Status is required.";
 
 
@@ -333,7 +372,8 @@ export default function EditReportScreen() {
       formData.append("school_name", report.school_name);
       formData.append("status", report.status);
       formData.append("subtype_id", selectedSubtype.toString());
-      formData.append("grade", report.grade);
+      // formData.append("grade", report.grade);
+      formData.append("grade", grade);
 
 
 
@@ -518,27 +558,80 @@ export default function EditReportScreen() {
             {errors.location && <Text style={styles.errorText}>{errors.location}</Text>}
           </View>
 
-          {/* School & Grade */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 15 }}>
-            <View style={{ flex: 1, marginRight: 10 }}>
-              <Text style={styles.label}>Name of School</Text>
-              <TextInput
-                style={styles.input}
-                value={report.school_name}
-                onChangeText={(text) => updateReportField("school_name", text)}
-              />
-              {errors.school_name && <Text style={styles.errorText}>{errors.school_name}</Text>}
-            </View>
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.label}>Grade</Text>
-              <TextInput
-                style={styles.input}
-                value={report.grade || ""}
-                onChangeText={(text) => updateReportField("grade", text)}
-              />
-              {errors.grade && <Text style={styles.errorText}>{errors.grade}</Text>}
-            </View>
-          </View>
+{/* School & Grade */}
+<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 15 }}>
+  <View style={{ flex: 1, marginRight: 10 }}>
+    <Text style={styles.label}>Name of School</Text>
+    <TextInput
+      style={[styles.input, errors.school_name && styles.inputError]}
+      value={school}
+      onChangeText={(text) => {
+        searchSchools(text);
+        if (text.trim().length >= 1) {
+          setErrors((prev: any) => ({ ...prev, school_name: "" }));
+        }
+      }}
+      placeholder="Start typing school name..."
+      placeholderTextColor="#999"
+    />
+    {errors.school_name && <Text style={styles.errorText}>{errors.school_name}</Text>}
+  </View>
+  <View style={{ flex: 1, marginLeft: 10 }}>
+    <Text style={styles.label}>Grade</Text>
+    <DropDownPicker
+      open={gradeOpen}
+      value={grade}
+      items={gradeItems}
+      setOpen={setGradeOpen}
+      setValue={setGrade}
+      setItems={setGradeItems}
+      placeholder="Select Grade"
+      style={styles.pickerWrapper}
+      dropDownContainerStyle={styles.pickerDropdown}
+      zIndex={4000}
+      zIndexInverse={1000}
+      listMode="SCROLLVIEW"
+    />
+    {errors.grade && <Text style={styles.errorText}>{errors.grade}</Text>}
+  </View>
+</View>
+
+{/* School Suggestions - Same as Create Report */}
+{schoolSuggestions.length > 0 && (
+  <View style={styles.suggestionsOverlay}>
+    <View style={styles.suggestionsContainer}>
+      <Text style={styles.suggestionsTitle}>Select School:</Text>
+      <FlatList
+        data={schoolSuggestions}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            onPress={() => {
+              setSchool(item.school_name);
+              setSchoolProvince(item.province);
+              setSchoolSuggestions([]);
+              setErrors((prev: any) => ({ ...prev, school_name: "" }));
+              updateReportField("school_name", item.school_name);
+            }}
+            style={styles.suggestionItem}
+          >
+            <Text style={styles.suggestionText}>
+              {item.school_name} ({item.province})
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
+      <TouchableOpacity
+        style={styles.closeSuggestionsButton}
+        onPress={() => setSchoolSuggestions([])}
+      >
+        <Text style={styles.closeSuggestionsText}>Close</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+)}
+
+     
 
           {/* Description */}
           <View style={styles.inputGroup}>
@@ -740,4 +833,53 @@ const styles = StyleSheet.create({
   loadingOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", position: "absolute", width: "100%", height: "100%", zIndex: 1000 },
   loadingContainer: { width: 180, padding: 20, backgroundColor: "#fff", borderRadius: 12, justifyContent: "center", alignItems: "center" },
   loadingText: { marginTop: 10, fontSize: 16, color: "#000", fontFamily: "Montserrat" },
+  // Add these styles before the closing } of StyleSheet
+suggestionsOverlay: {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: "rgba(0, 0, 0, 0.5)",
+  zIndex: 1000,
+  justifyContent: "flex-start",
+  alignItems: "center",
+  paddingTop: height * 0.15,
+  paddingHorizontal: width * 0.05,
+},
+suggestionsContainer: {
+  backgroundColor: "#fff",
+  borderRadius: 12,
+  padding: width * 0.04,
+  width: "90%",
+  maxHeight: height * 0.4,
+  borderWidth: 2,
+  borderColor: "#c7da30",
+  elevation: 10,
+},
+suggestionsTitle: {
+  fontSize: width * 0.045,
+  fontWeight: "bold",
+  marginBottom: height * 0.01,
+  fontFamily: "Montserrat",
+},
+suggestionItem: {
+  paddingVertical: height * 0.008,
+},
+suggestionText: {
+  fontSize: width * 0.04,
+  fontFamily: "Montserrat",
+},
+closeSuggestionsButton: {
+  marginTop: height * 0.01,
+  alignSelf: "center",
+},
+closeSuggestionsText: {
+  color: "#c7da30",
+  fontWeight: "bold",
+  fontFamily: "Montserrat",
+},
+inputError: {
+  borderColor: "red",
+},
 });
