@@ -651,12 +651,18 @@ if (!location || !location.trim()) {
                 placeholder="example@gmail.com"
                 placeholderTextColor="#999"
                 onChangeText={(t) => {
-                  setEmail(t);
-                  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t.trim())) {
+                  // ✅ Remove spaces BEFORE saving to state
+                  const cleanedEmail = t.replace(/\s/g, '');
+                  setEmail(cleanedEmail);
+                  // setEmail(t);
+                  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanedEmail)) {
                     setErrors((prev) => ({ ...prev, email: "" }));
                   }
                 }}
                 keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                spellCheck={false}
               />
               {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
 
