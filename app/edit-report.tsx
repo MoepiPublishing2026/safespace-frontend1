@@ -32,6 +32,8 @@ const { width, height } = Dimensions.get("window");
 // Allow common address characters
 const ADDRESS_REGEX = /^[a-zA-Z0-9\s@#.,\-\/()]+$/;
 
+const SA_PHONE_REGEX = /^(0[1-8][0-9]{8}|27[1-8][0-9]{8})$/;
+
 export default function EditReportScreen() {
   const { case_number } = useLocalSearchParams();
   const router = useRouter();
@@ -283,8 +285,8 @@ export default function EditReportScreen() {
       newErrors.reporter_email = "Enter a valid email address.";
     if (!report.phone_number)
       newErrors.phone_number = "Phone number is required.";
-    else if (!/^\d{10}$/.test(report.phone_number))
-      newErrors.phone_number = "Phone number must be 10 digits.";
+    else if (!SA_PHONE_REGEX.test(report.phone_number))
+      newErrors.phone_number = "The phone number field format is invalid.";
     if (!grade) newErrors.grade = "Grade is required.";
     else if (!report.age) newErrors.age = "Age is required.";
     else {
