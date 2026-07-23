@@ -32,7 +32,7 @@ export const GRADE_AGE_RANGES: Record<string, { min: number; max: number }> = {
     if (age < range.min || age > range.max) {
       return {
         status: "warning",
-        message: `Age ${age} is unusual for ${normalizedGrade}`,
+        message: `No grade available for this age`,
       };
     }
   

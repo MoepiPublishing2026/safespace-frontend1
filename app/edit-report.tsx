@@ -2,18 +2,15 @@ import { validateAgeGrade } from "@/components/ageGradeValidator";
 import MenuToggle from "@/components/menuToggle";
 import TopBar from "@/components/toBar";
 import { BACKEND_URL } from "@/utils/config";
-import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
-import { Audio, ResizeMode, Video } from "expo-av";
+import { Audio, Video } from "expo-av";
 import * as DocumentPicker from "expo-document-picker";
-import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
   Dimensions,
-  FlatList,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -23,7 +20,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 
@@ -55,7 +52,8 @@ export default function EditReportScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
   const isAnonymous = report?.is_anonymous == 1;
   const [school, setSchool] = useState("");
-  const [schoolSuggestions, setSchoolSuggestions] = useState<any[]>([]);
+const [schoolOpen, setSchoolOpen] = useState(false);
+const [schoolItems, setSchoolItems] = useState<any[]>([]);
   const [schoolProvince, setSchoolProvince] = useState("");
   const [grade, setGrade] = useState("");
   const [gradeOpen, setGradeOpen] = useState(false);
@@ -144,18 +142,26 @@ export default function EditReportScreen() {
 
   // school Search Function
   const searchSchools = async (text: string) => {
-    setSchool(text);
-    if (text.length < 1) {
-      setSchoolSuggestions([]);
+    if (!text || text.length < 2) {
+      setSchoolItems([]);
       return;
     }
+  
     try {
       const res = await axios.get(
-        `${BACKEND_URL}/schools/search?q=${encodeURIComponent(text)}`,
+        `${BACKEND_URL}/schools/search?q=${encodeURIComponent(text)}`
       );
-      setSchoolSuggestions(res.data);
-    } catch (err) {
-      console.error("Error fetching schools:", err);
+  
+      const formatted = res.data.map((item:any)=>({
+        label:`${item.school_name} (${item.province})`,
+        value:item.school_name,
+        province:item.province
+      }));
+  
+      setSchoolItems(formatted);
+  
+    } catch(error){
+      console.log("School search error:",error);
     }
   };
 
@@ -170,9 +176,19 @@ export default function EditReportScreen() {
         setSelectedSubtype(String(res.data.subtype_id));
         setSchoolProvince(res.data.school_province || "");
 
-        if (res.data.school_name) {
+        if(res.data.school_name){
+
           setSchool(res.data.school_name);
-        }
+         
+          setSchoolItems([
+          {
+            label:`${res.data.school_name} (${res.data.school_province || ""})`,
+            value:res.data.school_name,
+            province:res.data.school_province
+          }
+          ]);
+         
+         }
 
         if (res.data.grade) {
           setGrade(res.data.grade);
@@ -306,7 +322,7 @@ export default function EditReportScreen() {
     } else if (school.length > 50) {
       newErrors.school_name = "School name must be less than 50 characters.";
     } else {
-      updateReportField("school_name", school);
+    
 
       const lowerSchoolName = school.toLowerCase();
       const lowerGrade = grade.toLowerCase();
@@ -598,92 +614,103 @@ export default function EditReportScreen() {
           </View>
 
           {/* School & Grade */}
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginBottom: 15,
-            }}
-          >
-            <View style={{ flex: 1, marginRight: 10 }}>
-              <Text style={styles.label}>Name of School</Text>
-              <TextInput
-                style={[styles.input, errors.school_name && styles.inputError]}
-                value={school}
-                onChangeText={(text) => {
-                  searchSchools(text);
-                  if (text.trim().length >= 1) {
-                    setErrors((prev: any) => ({ ...prev, school_name: "" }));
-                  }
-                }}
-                placeholder="Start typing school name..."
-                placeholderTextColor="#999"
-              />
-              {errors.school_name && (
-                <Text style={styles.errorText}>{errors.school_name}</Text>
-              )}
-            </View>
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.label}>Grade</Text>
-              <DropDownPicker
-                open={gradeOpen}
-                value={grade}
-                items={gradeItems}
-                setOpen={setGradeOpen}
-                setValue={setGrade}
-                setItems={setGradeItems}
-                placeholder="Select Grade"
-                style={styles.pickerWrapper}
-                dropDownContainerStyle={styles.pickerDropdown}
-                zIndex={4000}
-                zIndexInverse={1000}
-                listMode="SCROLLVIEW"
-              />
-              {errors.grade && (
-                <Text style={styles.errorText}>{errors.grade}</Text>
-              )}
-            </View>
-          </View>
+         {/* School */}
+<View style={styles.inputGroup}>
+  <Text style={styles.label}>Name of School</Text>
 
-          {/* School Suggestions */}
-          {schoolSuggestions.length > 0 && (
-            <View style={styles.suggestionsOverlay}>
-              <View style={styles.suggestionsContainer}>
-                <Text style={styles.suggestionsTitle}>Select School:</Text>
-                <FlatList
-                  data={schoolSuggestions}
-                  keyExtractor={(item) => item.id.toString()}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      onPress={() => {
-                        setSchool(item.school_name);
-                        setSchoolProvince(item.province);
-                        setSchoolSuggestions([]);
-                        setErrors((prev: any) => ({
-                          ...prev,
-                          school_name: "",
-                        }));
-                        updateReportField("school_name", item.school_name);
-                      }}
-                      style={styles.suggestionItem}
-                    >
-                      <Text style={styles.suggestionText}>
-                        {item.school_name} ({item.province})
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                  nestedScrollEnabled={true}
-                />
-                <TouchableOpacity
-                  style={styles.closeSuggestionsButton}
-                  onPress={() => setSchoolSuggestions([])}
-                >
-                  <Text style={styles.closeSuggestionsText}>Close</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
+  <DropDownPicker
+    open={schoolOpen}
+    value={school}
+    items={schoolItems}
 
+    setOpen={setSchoolOpen}
+
+    setValue={(callback) => {
+      const value = callback(school);
+
+      setSchool(value);
+
+      const selected = schoolItems.find(
+        (item) => item.value === value
+      );
+
+      if (selected) {
+        setSchoolProvince(selected.province);
+
+        updateReportField(
+          "school_name",
+          selected.value
+        );
+      }
+    }}
+
+    setItems={setSchoolItems}
+
+    searchable={true}
+    searchPlaceholder="Search school..."
+
+    onChangeSearchText={(text) => {
+      searchSchools(text);
+    }}
+
+    placeholder="Select school"
+
+    style={[
+      styles.pickerWrapper,
+      errors.school_name && styles.inputError
+    ]}
+
+    dropDownContainerStyle={styles.pickerDropdown}
+
+    zIndex={5000}
+    zIndexInverse={1000}
+
+    listMode="SCROLLVIEW"
+  />
+
+  {errors.school_name && (
+    <Text style={styles.errorText}>
+      {errors.school_name}
+    </Text>
+  )}
+</View>
+
+
+{/* Grade */}
+<View style={styles.inputGroup}>
+  <Text style={styles.label}>Grade</Text>
+
+  <DropDownPicker
+    open={gradeOpen}
+    value={grade}
+    items={gradeItems}
+
+    setOpen={setGradeOpen}
+    setValue={setGrade}
+    setItems={setGradeItems}
+
+    placeholder="Select Grade"
+
+    style={styles.pickerWrapper}
+
+    dropDownContainerStyle={
+      styles.pickerDropdown
+    }
+
+    zIndex={4000}
+    zIndexInverse={1000}
+
+    listMode="SCROLLVIEW"
+  />
+
+  {errors.grade && (
+    <Text style={styles.errorText}>
+      {errors.grade}
+    </Text>
+  )}
+</View>
+
+       
           {/* Description */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>
